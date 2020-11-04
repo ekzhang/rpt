@@ -1,0 +1,10 @@
+[package]
+name = "rpt"
+version = "0.1.0"
+authors = ["Eric Zhang <ekzhang1@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+color-eyre = "0.5.6"
+image = "0.23.10"
+glm = { version = "0.8.0", package = "nalgebra-glm" }
