@@ -30,4 +30,10 @@ impl Object {
         self.material = material;
         self
     }
+
+    /// Set the transform of the object (builder pattern)
+    pub fn transform(mut self, transform: Transform) -> Self {
+        self.transform = transform;
+        self
+    }
 }

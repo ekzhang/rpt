@@ -146,7 +146,7 @@ impl<'a> Renderer<'a> {
         let mut h = HitRecord::new();
         let mut hit = None;
         for object in &self.scene.objects {
-            let local_ray = ray.apply_transform(&object.transform.matrix);
+            let local_ray = ray.apply_transform(&glm::inverse(&object.transform.matrix));
             if object.shape.intersect(&local_ray, EPSILON, &mut h) {
                 hit = Some(object);
                 // Fix normal vectors by multiplying by M^-T
