@@ -18,7 +18,7 @@ pub struct Triangle {
 }
 
 impl Shape for Triangle {
-    fn intersect(&self, r: Ray, tmin: f32) -> HitRecord {
+    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
         todo!();
     }
 }
@@ -36,7 +36,7 @@ pub struct Mesh {
 }
 
 impl Shape for Mesh {
-    fn intersect(&self, r: Ray, tmin: f32) -> HitRecord {
+    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
         todo!();
     }
 }

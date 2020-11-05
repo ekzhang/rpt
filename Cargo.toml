@@ -8,3 +8,6 @@ edition = "2018"
 color-eyre = "0.5.6"
 image = "0.23.10"
 glm = { version = "0.8.0", package = "nalgebra-glm" }
+
+[profile.dev]
+opt-level = 2

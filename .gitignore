@@ -1,5 +1,8 @@
 /target
 Cargo.lock
 
+# Editor files
+.vscode/
+
 # Rendered image
 output.png

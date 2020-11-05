@@ -6,14 +6,14 @@ fn main() -> color_eyre::Result<()> {
     let mut scene = Scene::new();
 
     scene.add(Object::new(sphere()));
-    scene.add(Light::Ambient(glm::vec3(0.2, 0.2, 0.2)));
+    scene.add(Light::Ambient(glm::vec3(0.1, 0.1, 0.1)));
     scene.add(Light::Point(
         glm::vec3(36.0, 36.0, 36.0),
         glm::vec3(0.0, 5.0, 5.0),
     ));
 
-    // magenta background
-    scene.background = hex_color(0xff00ff);
+    // black background
+    scene.background = hex_color(0x000000);
 
     Renderer::new(&scene, Camera::default())
         .width(800)

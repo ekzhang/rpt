@@ -10,7 +10,7 @@ pub struct Plane {
 }
 
 impl Shape for Plane {
-    fn intersect(&self, r: Ray, tmin: f32) -> HitRecord {
+    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
         todo!();
     }
 }
