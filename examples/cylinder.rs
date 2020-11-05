@@ -7,7 +7,7 @@ fn main() -> color_eyre::Result<()> {
 
     scene.add(
         Object::new(load_stl("examples/cylinder.stl")?)
-            .rotate_y(glm::half_pi())
+            .rotate_y(glm::quarter_pi())
             .scale(&glm::vec3(1.0 / 15.0, 1.0 / 15.0, 1.0 / 25.0))
             .translate(&glm::vec3(-15.0, -15.0, -25.0)),
     );
@@ -23,7 +23,7 @@ fn main() -> color_eyre::Result<()> {
     ));
     scene.add(Light::Directional(
         glm::vec3(0.6, 0.6, 0.6),
-        glm::vec3(0.0, -2.0, -1.0).normalize(),
+        glm::vec3(1.0, -1.0, 0.0).normalize(),
     ));
 
     // black background
