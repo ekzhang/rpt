@@ -23,3 +23,14 @@ impl Default for Material {
         }
     }
 }
+
+impl Material {
+    /// Construct a default diffuse material with a given color
+    pub fn diffuse(color: Color) -> Self {
+        Self {
+            diffuse: color,
+            specular: glm::vec3(0.0, 0.0, 0.0),
+            shininess: 0.0,
+        }
+    }
+}

@@ -24,4 +24,10 @@ impl Object {
             transform: Transform::default(),
         }
     }
+
+    /// Set the material of the object (builder pattern)
+    pub fn material(mut self, material: Material) -> Self {
+        self.material = material;
+        self
+    }
 }

@@ -6,6 +6,10 @@ fn main() -> color_eyre::Result<()> {
     let mut scene = Scene::new();
 
     scene.add(Object::new(sphere()));
+    scene.add(
+        Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -1.0))
+            .material(Material::diffuse(hex_color(0x0000ff))),
+    );
     scene.add(Light::Ambient(glm::vec3(0.1, 0.1, 0.1)));
     scene.add(Light::Point(
         glm::vec3(36.0, 36.0, 36.0),
