@@ -89,9 +89,11 @@ impl Shape for Mesh {
     fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
         // Currently this implementation is brute force
         // TODO: Optimize this to use BVH or kd-trees
-        self.triangles
+        let hits: Vec<_> = self
+            .triangles
             .iter()
             .map(|triangle| triangle.intersect(ray, t_min, record))
-            .any(|x| x)
+            .collect();
+        hits.into_iter().any(|x| x)
     }
 }

@@ -1,5 +1,3 @@
-// TODO: Figure out why this cylinder isn't rendering properly.
-
 use rpt::*;
 
 fn main() -> color_eyre::Result<()> {
@@ -20,11 +18,11 @@ fn main() -> color_eyre::Result<()> {
 
     scene.add(Light::Ambient(glm::vec3(0.1, 0.1, 0.1)));
     scene.add(Light::Point(
-        glm::vec3(36.0, 36.0, 36.0),
+        glm::vec3(24.0, 24.0, 24.0),
         glm::vec3(0.0, 5.0, 5.0),
     ));
     scene.add(Light::Directional(
-        glm::vec3(0.75, 0.75, 0.75),
+        glm::vec3(0.6, 0.6, 0.6),
         glm::vec3(0.0, -2.0, -1.0).normalize(),
     ));
 
