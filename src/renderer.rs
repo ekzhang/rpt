@@ -1,9 +1,10 @@
+use image::{ImageBuffer, RgbImage};
+
 use crate::color::{color_bytes, Color};
 use crate::light::Light;
 use crate::object::Object;
 use crate::scene::Scene;
 use crate::shape::{HitRecord, Ray};
-use image::{ImageBuffer, RgbImage};
 
 const EPSILON: f32 = 1e-4;
 
@@ -122,10 +123,9 @@ impl<'a> Renderer<'a> {
                                 origin: world_pos,
                                 dir: dir_to_light,
                             })
-                            .map(|(r, _)| r.time)
-                            .unwrap_or(f32::INFINITY);
+                            .map(|(r, _)| r.time);
 
-                        if closest_hit > dist_to_light {
+                        if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                             // Phong reflectance model (BRDF)
                             let kd = f32::max(0.0, glm::dot(&dir_to_light, &h.normal));
                             let diffuse = kd * intensity.component_mul(&object.material.diffuse);
