@@ -10,7 +10,6 @@ pub use object::*;
 pub use renderer::*;
 pub use scene::*;
 pub use shape::*;
-pub use transform::*;
 
 mod color;
 mod light;
@@ -19,4 +18,3 @@ mod object;
 mod renderer;
 mod scene;
 mod shape;
-mod transform;

@@ -8,11 +8,8 @@ fn main() -> color_eyre::Result<()> {
     scene.add(Object::new(sphere()));
     scene.add(
         Object::new(sphere())
-            .transform(
-                Transform::new()
-                    .translate(&glm::vec3(1.5, -0.5, 1.0))
-                    .scale(&glm::vec3(0.5, 0.5, 0.5)),
-            )
+            .translate(&glm::vec3(1.5, -0.5, 1.0))
+            .scale(&glm::vec3(0.5, 0.5, 0.5))
             .material(Material {
                 diffuse: hex_color(0x0000ff),
                 specular: glm::vec3(0.25, 0.25, 0.25),
@@ -21,11 +18,8 @@ fn main() -> color_eyre::Result<()> {
     );
     scene.add(
         Object::new(sphere())
-            .transform(
-                Transform::new()
-                    .translate(&glm::vec3(-1.5, -0.5, 1.0))
-                    .scale(&glm::vec3(0.5, 0.5, 0.5)),
-            )
+            .translate(&glm::vec3(-1.5, -0.5, 1.0))
+            .scale(&glm::vec3(0.5, 0.5, 0.5))
             .material(Material {
                 diffuse: hex_color(0x00ff00),
                 specular: glm::vec3(0.25, 0.25, 0.25),

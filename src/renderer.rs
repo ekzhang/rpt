@@ -146,11 +146,11 @@ impl<'a> Renderer<'a> {
         let mut h = HitRecord::new();
         let mut hit = None;
         for object in &self.scene.objects {
-            let local_ray = ray.apply_transform(&glm::inverse(&object.transform.matrix));
+            let local_ray = ray.apply_transform(&glm::inverse(&object.transform));
             if object.shape.intersect(&local_ray, EPSILON, &mut h) {
                 hit = Some(object);
                 // Fix normal vectors by multiplying by M^-T
-                h.normal = (glm::inverse_transpose(glm::mat4_to_mat3(&object.transform.matrix))
+                h.normal = (glm::inverse_transpose(glm::mat4_to_mat3(&object.transform))
                     * h.normal)
                     .normalize();
             }

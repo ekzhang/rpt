@@ -1,6 +1,5 @@
 use crate::material::Material;
 use crate::shape::Shape;
-use crate::transform::Transform;
 use std::rc::Rc;
 
 /// An object rendered in a scene
@@ -12,7 +11,7 @@ pub struct Object {
     pub material: Material,
 
     /// Affine transform applied to the object
-    pub transform: Transform,
+    pub transform: glm::Mat4,
 }
 
 impl Object {
@@ -21,7 +20,7 @@ impl Object {
         Self {
             shape,
             material: Material::default(),
-            transform: Transform::default(),
+            transform: glm::identity(),
         }
     }
 
@@ -31,9 +30,39 @@ impl Object {
         self
     }
 
-    /// Set the transform of the object (builder pattern)
-    pub fn transform(mut self, transform: Transform) -> Self {
-        self.transform = transform;
+    /// Transform: prepend a translation
+    pub fn translate(mut self, v: &glm::Vec3) -> Self {
+        self.transform = glm::translate(&self.transform, v);
+        self
+    }
+
+    /// Transform: prepend a scale, in 3 dimensions
+    pub fn scale(mut self, v: &glm::Vec3) -> Self {
+        self.transform = glm::scale(&self.transform, v);
+        self
+    }
+
+    /// Transform: prepend a rotation, by an angle in radians about an axis
+    pub fn rotate(mut self, angle: f32, axis: &glm::Vec3) -> Self {
+        self.transform = glm::rotate(&self.transform, angle, axis);
+        self
+    }
+
+    /// Transform: prepend a rotation around the X axis, by an angle in radians
+    pub fn rotate_x(mut self, angle: f32) -> Self {
+        self.transform = glm::rotate_x(&self.transform, angle);
+        self
+    }
+
+    /// Transform: prepend a rotation around the Y axis, by an angle in radians
+    pub fn rotate_y(mut self, angle: f32) -> Self {
+        self.transform = glm::rotate_y(&self.transform, angle);
+        self
+    }
+
+    /// Transform: prepend a rotation around the Z axis, by an angle in radians
+    pub fn rotate_z(mut self, angle: f32) -> Self {
+        self.transform = glm::rotate_z(&self.transform, angle);
         self
     }
 }
