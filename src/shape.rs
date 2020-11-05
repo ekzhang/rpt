@@ -1,8 +1,12 @@
 // TODO: Constructive solid geometry
+use color_eyre::eyre::{anyhow, bail};
+use std::fs::File;
+use std::io::{prelude::*, BufReader, SeekFrom};
+use std::rc::Rc;
+
 pub use mesh::{Mesh, Triangle};
 pub use plane::Plane;
 pub use sphere::Sphere;
-use std::rc::Rc;
 
 mod mesh;
 mod plane;
@@ -82,7 +86,206 @@ pub fn plane(normal: glm::Vec3, value: f32) -> Rc<Plane> {
     Rc::new(Plane { normal, value })
 }
 
-/// Helper function to load a mesh from an STL .OBJ file
+fn parse_index(value: &str) -> Option<usize> {
+    value.parse::<i32>().ok().and_then(|index| {
+        if index > 0 {
+            Some((index - 1) as usize)
+        } else {
+            None
+        }
+    })
+}
+
+/// Helper function to load a mesh from a Wavefront .OBJ file
+///
+/// See https://www.cs.cmu.edu/~mbz/personal/graphics/obj.html for details.
 pub fn load_obj(path: &str) -> color_eyre::Result<Rc<Mesh>> {
-    todo!();
+    // TODO: no texture or material support yet
+    let mut vertices: Vec<glm::Vec3> = Vec::new();
+    let mut normals: Vec<glm::Vec3> = Vec::new();
+    let mut triangles = Vec::new();
+
+    let reader = BufReader::new(File::open(path)?);
+    for line in reader.lines() {
+        let line = line?.trim().to_string();
+        if line.starts_with("#") || line.is_empty() {
+            continue;
+        }
+        let tokens: Vec<&str> = line.split_ascii_whitespace().collect();
+        match tokens[0] {
+            "v" => {
+                // vertex
+                let v = glm::vec3::<f32>(
+                    tokens[1].parse().expect("Failed to parse vertex in .OBJ"),
+                    tokens[2].parse().expect("Failed to parse vertex in .OBJ"),
+                    tokens[3].parse().expect("Failed to parse vertex in .OBJ"),
+                );
+                vertices.push(v);
+            }
+            "vt" => {
+                // vertex texture
+                eprintln!("Warning: Found 'vt' in .OBJ file, unimplemented, skipping...");
+            }
+            "vn" => {
+                // vertex normal
+                let vn = glm::vec3::<f32>(
+                    tokens[1].parse().expect("Failed to parse vertex in .OBJ"),
+                    tokens[2].parse().expect("Failed to parse vertex in .OBJ"),
+                    tokens[3].parse().expect("Failed to parse vertex in .OBJ"),
+                );
+                normals.push(vn);
+            }
+            "f" => {
+                // face
+                let (vi, vni): (Vec<_>, Vec<_>) = tokens[1..]
+                    .iter()
+                    .map(|&vertex| {
+                        let args: Vec<_> = vertex
+                            .split("/")
+                            .chain(std::iter::repeat(""))
+                            .take(3)
+                            .collect();
+                        (parse_index(args[0]), parse_index(args[2]))
+                    })
+                    .unzip();
+                for i in 1..(vi.len() - 1) {
+                    let a = 0;
+                    let b = i;
+                    let c = i + 1;
+                    let v1 = vertices[vi[a].ok_or(anyhow!("Invalid vertex index"))?];
+                    let v2 = vertices[vi[b].ok_or(anyhow!("Invalid vertex index"))?];
+                    let v3 = vertices[vi[c].ok_or(anyhow!("Invalid vertex index"))?];
+                    if vni[a].is_none() || vni[b].is_none() || vni[c].is_none() {
+                        triangles.push(Triangle::from_vertices(v1, v2, v3));
+                    } else {
+                        triangles.push(Triangle {
+                            v1,
+                            v2,
+                            v3,
+                            n1: normals[vni[a].unwrap()],
+                            n2: normals[vni[b].unwrap()],
+                            n3: normals[vni[c].unwrap()],
+                        });
+                    }
+                }
+            }
+            "mtllib" => {
+                // material library
+                eprintln!("Warning: Found 'mtllib' in .OBJ file, unimplemented, skipping...");
+            }
+            "usemtl" => {
+                // material
+                eprintln!("Warning: Found 'usemtl' in .OBJ file, unimplemented, skipping...");
+            }
+            // Ignore other unrecognized or non-standard commands
+            _ => (),
+        }
+    }
+
+    Ok(Rc::new(Mesh::new(triangles)))
+}
+
+/// Helper function to load a mesh from a .STL file
+///
+/// See https://en.wikipedia.org/wiki/STL_%28file_format%29 and
+/// https://stackoverflow.com/a/26171886 for details.
+pub fn load_stl(path: &str) -> color_eyre::Result<Rc<Mesh>> {
+    let size = std::fs::metadata(path)?.len();
+    if size < 15 {
+        bail!("Opened .STL file {} is too short", path);
+    }
+    let mut file = File::open(path)?;
+    if size >= 84 {
+        file.seek(SeekFrom::Start(80))?;
+        let mut buf: [u8; 4] = Default::default();
+        file.read_exact(&mut buf)?;
+        let num_triangles = u32::from_le_bytes(buf) as u64;
+        if size == 84 + num_triangles * 50 {
+            // Very likely binary STL format
+            return load_stl_binary(file, num_triangles);
+        }
+    }
+
+    file.seek(SeekFrom::Start(0))?;
+    let mut buf: [u8; 6] = Default::default();
+    file.read_exact(&mut buf)?;
+    if std::str::from_utf8(&buf) == Ok("solid ") {
+        // ASCII STL format
+        load_stl_ascii(file)
+    } else {
+        bail!("Opened .STL file {}, but could not determine format", path);
+    }
+}
+
+fn load_stl_ascii(file: File) -> color_eyre::Result<Rc<Mesh>> {
+    let reader = BufReader::new(file);
+    let mut lines = reader.lines().skip(1);
+    let mut triangles = Vec::new();
+    while let Some(line) = lines.next() {
+        let vn: Vec<_> = line?
+            .trim()
+            .strip_prefix("facet normal ")
+            .ok_or(anyhow!("Malformed STL file: expected `facet normal`"))?
+            .split_ascii_whitespace()
+            .map(|token| token.parse::<f32>().expect("Invalid facet normal"))
+            .collect();
+        let vn = glm::vec3(vn[0], vn[1], vn[2]);
+        lines.next().unwrap()?; // "outer loop"
+        let mut vs: [glm::Vec3; 3] = Default::default();
+        for i in 0..3 {
+            let v: Vec<_> = lines
+                .next()
+                .unwrap()?
+                .trim()
+                .strip_prefix("vertex ")
+                .ok_or(anyhow!("Malformed STL file: expected `vertex`"))?
+                .split_ascii_whitespace()
+                .map(|token| token.parse::<f32>().expect("Invalid vertex"))
+                .collect();
+            vs[i] = glm::vec3(v[0], v[1], v[2]);
+        }
+        lines.next().unwrap()?; // "endloop"
+        lines.next().unwrap()?; // "endfacet"
+
+        triangles.push(Triangle {
+            v1: vs[0],
+            v2: vs[1],
+            v3: vs[2],
+            n1: vn,
+            n2: vn,
+            n3: vn,
+        });
+    }
+    Ok(Rc::new(Mesh::new(triangles)))
+}
+
+fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Rc<Mesh>> {
+    let mut reader = BufReader::new(file);
+    let mut triangles = Vec::new();
+    let read_vec3 = |reader: &mut BufReader<File>| -> color_eyre::Result<glm::Vec3> {
+        let mut buf: [u8; 4] = Default::default();
+        reader.read_exact(&mut buf)?;
+        let v1 = f32::from_le_bytes(buf);
+        reader.read_exact(&mut buf)?;
+        let v2 = f32::from_le_bytes(buf);
+        reader.read_exact(&mut buf)?;
+        let v3 = f32::from_le_bytes(buf);
+        Ok(glm::vec3(v1, v2, v3))
+    };
+    for _ in 0..num_triangles {
+        let vn = read_vec3(&mut reader)?;
+        let v1 = read_vec3(&mut reader)?;
+        let v2 = read_vec3(&mut reader)?;
+        let v3 = read_vec3(&mut reader)?;
+        reader.seek(SeekFrom::Current(2))?;
+        triangles.push(Triangle {
+            v1,
+            v2,
+            v3,
+            n1: vn,
+            n2: vn,
+            n3: vn,
+        });
+    }
+    Ok(Rc::new(Mesh::new(triangles)))
 }

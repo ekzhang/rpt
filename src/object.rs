@@ -1,6 +1,7 @@
+use std::rc::Rc;
+
 use crate::material::Material;
 use crate::shape::Shape;
-use std::rc::Rc;
 
 /// An object rendered in a scene
 pub struct Object {
