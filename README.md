@@ -13,3 +13,10 @@ To run tests, use:
 ```bash
 cargo test
 ```
+
+## References
+
+- https://github.com/fogleman/pt
+- http://www.pbr-book.org/
+- https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing
+- https://en.wikipedia.org/wiki/Gamma_correction
