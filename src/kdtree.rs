@@ -1,6 +1,6 @@
 use crate::shape::{HitRecord, Ray, Shape};
 
-const SCORE_THRESHOLD: f64 = 0.75;
+const SCORE_THRESHOLD: f64 = 0.85;
 
 /// A geometric object with a bounding box (needed for kd-tree intersections)
 pub trait Bounded {
@@ -51,6 +51,24 @@ impl BoundingBox {
             f32::min(f32::min(x2, y2), z2),
         )
     }
+
+    /// Splits the bounding box with respect to a plane
+    pub fn split(&self, axis: usize, value: f32) -> (BoundingBox, BoundingBox) {
+        let mut p_mid_max = self.p_max;
+        p_mid_max[axis] = value;
+        let mut p_mid_min = self.p_min;
+        p_mid_min[axis] = value;
+        (
+            BoundingBox {
+                p_min: self.p_min,
+                p_max: p_mid_max,
+            },
+            BoundingBox {
+                p_min: p_mid_min,
+                p_max: self.p_max,
+            },
+        )
+    }
 }
 
 /// A kd-tree based on bounding boxes, to accelerate ray intersections
@@ -97,20 +115,25 @@ impl<T: Bounded + Shape> Shape for KdTree<T> {
             // No potential for intersecting, even the broader bounding box
             return false;
         }
-        self.intersect_subtree(&self.root, ray, t_min, record)
+        self.intersect_subtree(&self.root, &self.bounds, ray, t_min, record)
     }
 }
 
 impl<T: Bounded + Shape> KdTree<T> {
+    /// Intersect the current ray with a given subtree.
+    ///
+    /// Guarantee: we always find the closest intersection in the current kd-cell, if any.
     fn intersect_subtree(
         &self,
         node: &KdNode,
+        bbox: &BoundingBox,
         ray: &Ray,
         t_min: f32,
         record: &mut HitRecord,
     ) -> bool {
-        // Guarantee: we always find the closest intersection in the current kd-cell, if any
-        let (t_split, first, second) = match node {
+        let (b_min, b_max) = bbox.intersect(ray);
+
+        let (t_split, first, second, bbox_split) = match node {
             KdNode::Leaf(indices) => {
                 // Try to intersect the ray with all objects in the node
                 let mut result = false;
@@ -125,46 +148,50 @@ impl<T: Bounded + Shape> KdTree<T> {
                 let t_split = (value - ray.origin.x) / ray.dir.x;
                 let left_first =
                     (ray.origin.x < *value) || (ray.origin.x == *value && ray.dir.x <= 0.0);
+                let (bbox_left, bbox_right) = bbox.split(0, *value);
                 if left_first {
-                    (t_split, left, right)
+                    (t_split, left, right, (bbox_left, bbox_right))
                 } else {
-                    (t_split, right, left)
+                    (t_split, right, left, (bbox_right, bbox_left))
                 }
             }
             KdNode::SplitY(value, left, right) => {
                 let t_split = (value - ray.origin.y) / ray.dir.y;
                 let left_first =
                     (ray.origin.y < *value) || (ray.origin.y == *value && ray.dir.y <= 0.0);
+                let (bbox_left, bbox_right) = bbox.split(1, *value);
                 if left_first {
-                    (t_split, left, right)
+                    (t_split, left, right, (bbox_left, bbox_right))
                 } else {
-                    (t_split, right, left)
+                    (t_split, right, left, (bbox_right, bbox_left))
                 }
             }
             KdNode::SplitZ(value, left, right) => {
                 let t_split = (value - ray.origin.z) / ray.dir.z;
                 let left_first =
                     (ray.origin.z < *value) || (ray.origin.z == *value && ray.dir.z <= 0.0);
+                let (bbox_left, bbox_right) = bbox.split(2, *value);
                 if left_first {
-                    (t_split, left, right)
+                    (t_split, left, right, (bbox_left, bbox_right))
                 } else {
-                    (t_split, right, left)
+                    (t_split, right, left, (bbox_right, bbox_left))
                 }
             }
         };
-        if record.time < t_split || t_split <= 0.0 {
-            self.intersect_subtree(first, ray, t_min, record)
-        } else if t_split < t_min {
-            self.intersect_subtree(second, ray, t_min, record)
+
+        if t_split > b_max.min(record.time) || t_split <= 0.0 {
+            self.intersect_subtree(first, &bbox_split.0, ray, t_min, record)
+        } else if t_split < b_min.max(t_min) {
+            self.intersect_subtree(second, &bbox_split.1, ray, t_min, record)
         } else {
-            let h1 = self.intersect_subtree(first, ray, t_min, record);
+            let h1 = self.intersect_subtree(first, &bbox_split.0, ray, t_min, record);
             if h1 && record.time < t_split {
                 true
             } else {
                 // We still might need to visit the second subtree, since the first
                 // subtree might have discovered an intersection that lies outside of the
                 // actual subtree bounding box itself, but is suboptimal.
-                let h2 = self.intersect_subtree(second, ray, t_split, record);
+                let h2 = self.intersect_subtree(second, &bbox_split.1, ray, t_split, record);
                 h1 || h2
             }
         }
