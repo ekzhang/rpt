@@ -4,6 +4,7 @@
 #![warn(missing_docs)]
 
 pub use color::*;
+pub use kdtree::*;
 pub use light::*;
 pub use material::*;
 pub use object::*;
@@ -12,6 +13,7 @@ pub use scene::*;
 pub use shape::*;
 
 mod color;
+mod kdtree;
 mod light;
 mod material;
 mod object;

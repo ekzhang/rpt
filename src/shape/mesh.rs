@@ -1,4 +1,5 @@
 use super::{HitRecord, Ray, Shape};
+use crate::kdtree::{Bounded, BoundingBox, KdTree};
 
 /// A triangle with three vertices and three normals
 pub struct Triangle {
@@ -32,9 +33,19 @@ impl Triangle {
     }
 }
 
+impl Bounded for Triangle {
+    fn bounding_box(&self) -> BoundingBox {
+        BoundingBox {
+            p_min: glm::min3(&self.v1, &self.v2, &self.v3),
+            p_max: glm::max3(&self.v1, &self.v2, &self.v3),
+        }
+    }
+}
+
 impl Shape for Triangle {
     fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
-        let plane_normal = (self.v2 - self.v1).cross(&(self.v3 - self.v1)).normalize();
+        let (d0, d1) = (self.v2 - self.v1, self.v3 - self.v1);
+        let plane_normal = d0.cross(&d1).normalize();
         let cosine = plane_normal.dot(&ray.dir);
         if cosine.abs() < 1e-8 {
             // Parallel ray and plane of triangle
@@ -47,8 +58,7 @@ impl Shape for Triangle {
 
         // Okay, so let's compute barycentric coordinates now, fast
         // https://gamedev.stackexchange.com/a/23745
-        let p = ray.at(time);
-        let (d0, d1, d2) = (self.v2 - self.v1, self.v3 - self.v1, p - self.v1);
+        let d2 = ray.at(time) - self.v1;
         let d00 = d0.dot(&d0);
         let d01 = d0.dot(&d1);
         let d11 = d1.dot(&d1);
@@ -62,38 +72,14 @@ impl Shape for Triangle {
         if u >= 0.0 && v >= 0.0 && w >= 0.0 {
             record.time = time;
             record.normal = (u * self.n1 + v * self.n2 + w * self.n3).normalize();
+            // eprintln!("troo");
             true
         } else {
+            // eprintln!("false");
             false
         }
     }
 }
 
-/// A triangle mesh
-pub struct Mesh {
-    /// An array containing triangles, which constitute the mesh
-    ///
-    /// Unlike GLOO, we don't need to care about OpenGL, so storing separate buffers
-    /// for positions, vertex normals, and indices doesn't really make sense.
-    pub triangles: Vec<Triangle>,
-}
-
-impl Mesh {
-    /// Construct a new mesh from a collection of triangles
-    pub fn new(triangles: Vec<Triangle>) -> Self {
-        Self { triangles }
-    }
-}
-
-impl Shape for Mesh {
-    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
-        // Currently this implementation is brute force
-        // TODO: Optimize this to use BVH or kd-trees
-        let hits: Vec<_> = self
-            .triangles
-            .iter()
-            .map(|triangle| triangle.intersect(ray, t_min, record))
-            .collect();
-        hits.into_iter().any(|x| x)
-    }
-}
+/// A triangle mesh, stored using a kd-tree
+pub type Mesh = KdTree<Triangle>;
