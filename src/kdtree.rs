@@ -1,6 +1,6 @@
 use crate::shape::{HitRecord, Ray, Shape};
 
-const SCORE_THRESHOLD: f64 = 0.65;
+const SCORE_THRESHOLD: f64 = 0.75;
 
 /// A geometric object with a bounding box (needed for kd-tree intersections)
 pub trait Bounded {
@@ -123,11 +123,8 @@ impl<T: Bounded + Shape> KdTree<T> {
             }
             KdNode::SplitX(value, left, right) => {
                 let t_split = (value - ray.origin.x) / ray.dir.x;
-                // The ray.dir.x >= 0 here is opposite from the code in fogleman/pt, as I
-                // found that their way introduces clipping bugs, in the case that the ray
-                // starts on the splitting plane and t_split < t_min.
                 let left_first =
-                    (ray.origin.x < *value) || (ray.origin.x == *value && ray.dir.x >= 0.0);
+                    (ray.origin.x < *value) || (ray.origin.x == *value && ray.dir.x <= 0.0);
                 if left_first {
                     (t_split, left, right)
                 } else {
@@ -137,7 +134,7 @@ impl<T: Bounded + Shape> KdTree<T> {
             KdNode::SplitY(value, left, right) => {
                 let t_split = (value - ray.origin.y) / ray.dir.y;
                 let left_first =
-                    (ray.origin.y < *value) || (ray.origin.y == *value && ray.dir.y >= 0.0);
+                    (ray.origin.y < *value) || (ray.origin.y == *value && ray.dir.y <= 0.0);
                 if left_first {
                     (t_split, left, right)
                 } else {
@@ -147,7 +144,7 @@ impl<T: Bounded + Shape> KdTree<T> {
             KdNode::SplitZ(value, left, right) => {
                 let t_split = (value - ray.origin.z) / ray.dir.z;
                 let left_first =
-                    (ray.origin.z < *value) || (ray.origin.z == *value && ray.dir.z >= 0.0);
+                    (ray.origin.z < *value) || (ray.origin.z == *value && ray.dir.z <= 0.0);
                 if left_first {
                     (t_split, left, right)
                 } else {
@@ -155,7 +152,7 @@ impl<T: Bounded + Shape> KdTree<T> {
                 }
             }
         };
-        if record.time < t_split || t_split < 0.0 {
+        if record.time < t_split || t_split <= 0.0 {
             self.intersect_subtree(first, ray, t_min, record)
         } else if t_split < t_min {
             self.intersect_subtree(second, ray, t_min, record)
@@ -167,7 +164,7 @@ impl<T: Bounded + Shape> KdTree<T> {
                 // We still might need to visit the second subtree, since the first
                 // subtree might have discovered an intersection that lies outside of the
                 // actual subtree bounding box itself, but is suboptimal.
-                let h2 = self.intersect_subtree(second, ray, t_min, record);
+                let h2 = self.intersect_subtree(second, ray, t_split, record);
                 h1 || h2
             }
         }
