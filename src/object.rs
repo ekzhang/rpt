@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::material::Material;
 use crate::shape::Shape;
@@ -6,7 +6,7 @@ use crate::shape::Shape;
 /// An object rendered in a scene
 pub struct Object {
     /// Basic geometry of the object
-    pub shape: Rc<dyn Shape>,
+    pub shape: Arc<dyn Shape>,
 
     /// Material of the object (possibly simple or complex)
     pub material: Material,
@@ -17,7 +17,7 @@ pub struct Object {
 
 impl Object {
     /// Create a new object from a shape, with default material
-    pub fn new(shape: Rc<dyn Shape>) -> Self {
+    pub fn new(shape: Arc<dyn Shape>) -> Self {
         Self {
             shape,
             material: Material::default(),

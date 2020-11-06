@@ -2,7 +2,7 @@
 use color_eyre::eyre::{anyhow, bail};
 use std::fs::File;
 use std::io::{prelude::*, BufReader, SeekFrom};
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub use mesh::{Mesh, Triangle};
 pub use plane::Plane;
@@ -13,7 +13,7 @@ mod plane;
 mod sphere;
 
 /// Represents a physical shape, which can be hit by a ray to find intersections
-pub trait Shape {
+pub trait Shape: Send + Sync {
     /// Intersect the shape with a ray, for `t >= t_min`, returning true and mutating
     /// `h` if an intersection was found before the current closest one
     fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool;
@@ -76,14 +76,14 @@ impl HitRecord {
     }
 }
 
-/// Helper function to construct an `Rc` for a sphere
-pub fn sphere() -> Rc<Sphere> {
-    Rc::new(Sphere)
+/// Helper function to construct an `Arc` for a sphere
+pub fn sphere() -> Arc<Sphere> {
+    Arc::new(Sphere)
 }
 
-/// Helper function to construct an `Rc` for a plane
-pub fn plane(normal: glm::Vec3, value: f32) -> Rc<Plane> {
-    Rc::new(Plane { normal, value })
+/// Helper function to construct an `Arc` for a plane
+pub fn plane(normal: glm::Vec3, value: f32) -> Arc<Plane> {
+    Arc::new(Plane { normal, value })
 }
 
 fn parse_index(value: &str) -> Option<usize> {
@@ -99,7 +99,7 @@ fn parse_index(value: &str) -> Option<usize> {
 /// Helper function to load a mesh from a Wavefront .OBJ file
 ///
 /// See https://www.cs.cmu.edu/~mbz/personal/graphics/obj.html for details.
-pub fn load_obj(path: &str) -> color_eyre::Result<Rc<Mesh>> {
+pub fn load_obj(path: &str) -> color_eyre::Result<Arc<Mesh>> {
     // TODO: no texture or material support yet
     let mut vertices: Vec<glm::Vec3> = Vec::new();
     let mut normals: Vec<glm::Vec3> = Vec::new();
@@ -182,14 +182,14 @@ pub fn load_obj(path: &str) -> color_eyre::Result<Rc<Mesh>> {
         }
     }
 
-    Ok(Rc::new(Mesh::new(triangles)))
+    Ok(Arc::new(Mesh::new(triangles)))
 }
 
 /// Helper function to load a mesh from a .STL file
 ///
 /// See https://en.wikipedia.org/wiki/STL_%28file_format%29 and
 /// https://stackoverflow.com/a/26171886 for details.
-pub fn load_stl(path: &str) -> color_eyre::Result<Rc<Mesh>> {
+pub fn load_stl(path: &str) -> color_eyre::Result<Arc<Mesh>> {
     let size = std::fs::metadata(path)?.len();
     if size < 15 {
         bail!("Opened .STL file {} is too short", path);
@@ -217,7 +217,7 @@ pub fn load_stl(path: &str) -> color_eyre::Result<Rc<Mesh>> {
     }
 }
 
-fn load_stl_ascii(file: File) -> color_eyre::Result<Rc<Mesh>> {
+fn load_stl_ascii(file: File) -> color_eyre::Result<Arc<Mesh>> {
     let reader = BufReader::new(file);
     let mut lines = reader.lines().skip(1);
     let mut triangles = Vec::new();
@@ -256,10 +256,10 @@ fn load_stl_ascii(file: File) -> color_eyre::Result<Rc<Mesh>> {
             n3: vn,
         });
     }
-    Ok(Rc::new(Mesh::new(triangles)))
+    Ok(Arc::new(Mesh::new(triangles)))
 }
 
-fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Rc<Mesh>> {
+fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Arc<Mesh>> {
     let mut reader = BufReader::new(file);
     let mut triangles = Vec::new();
     let read_vec3 = |reader: &mut BufReader<File>| -> color_eyre::Result<glm::Vec3> {
@@ -287,5 +287,5 @@ fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Rc<Mesh
             n3: vn,
         });
     }
-    Ok(Rc::new(Mesh::new(triangles)))
+    Ok(Arc::new(Mesh::new(triangles)))
 }

@@ -1,4 +1,5 @@
 use image::{ImageBuffer, RgbImage};
+use rayon::prelude::*;
 
 use crate::color::{color_bytes, Color};
 use crate::light::Light;
@@ -89,10 +90,20 @@ impl<'a> Renderer<'a> {
 
     /// Render the scene by path tracing
     pub fn render(&self) -> RgbImage {
-        // TODO: parallelize this code (should be easy)
-        ImageBuffer::from_fn(self.width, self.height, |x, y| {
-            image::Rgb(color_bytes(&self.get_color(x, y)))
-        })
+        let buf: Vec<_> = (0..self.height)
+            .into_par_iter()
+            .flat_map(|y| {
+                let mut buf = Vec::new();
+                for x in 0..self.width {
+                    let [r, g, b] = color_bytes(&self.get_color(x, y));
+                    buf.push(r);
+                    buf.push(g);
+                    buf.push(b);
+                }
+                buf
+            })
+            .collect();
+        ImageBuffer::from_raw(self.width, self.height, buf).expect("Image buffer has wrong size")
     }
 
     fn get_color(&self, x: u32, y: u32) -> Color {

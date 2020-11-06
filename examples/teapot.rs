@@ -25,8 +25,8 @@ fn main() -> color_eyre::Result<()> {
     scene.background = hex_color(0x000000);
 
     Renderer::new(&scene, Camera::default())
-        .width(400)
-        .height(300)
+        .width(800)
+        .height(800)
         .render()
         .save("output.png")?;
 
