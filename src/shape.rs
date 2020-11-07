@@ -4,10 +4,12 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader, SeekFrom};
 use std::sync::Arc;
 
+pub use cube::Cube;
 pub use mesh::{Mesh, Triangle};
 pub use plane::Plane;
 pub use sphere::Sphere;
 
+mod cube;
 mod mesh;
 mod plane;
 mod sphere;
@@ -84,6 +86,11 @@ pub fn sphere() -> Arc<Sphere> {
 /// Helper function to construct an `Arc` for a plane
 pub fn plane(normal: glm::Vec3, value: f32) -> Arc<Plane> {
     Arc::new(Plane { normal, value })
+}
+
+/// Helper function to construct an `Arc` for a cube
+pub fn cube() -> Arc<Cube> {
+    Arc::new(Cube)
 }
 
 fn parse_index(value: &str) -> Option<usize> {

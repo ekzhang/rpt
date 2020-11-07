@@ -7,6 +7,13 @@ fn main() -> color_eyre::Result<()> {
 
     scene.add(Object::new(sphere()));
     scene.add(
+        Object::new(cube())
+            .translate(&glm::vec3(0.4, -0.8, 4.0))
+            .scale(&glm::vec3(0.5, 0.3, 0.4))
+            .rotate_y(glm::pi::<f32>() / 6.0)
+            .material(Material::diffuse(hex_color(0xff00ff))),
+    );
+    scene.add(
         Object::new(sphere())
             .translate(&glm::vec3(1.5, -0.5, 1.0))
             .scale(&glm::vec3(0.5, 0.5, 0.5))

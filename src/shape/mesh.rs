@@ -72,10 +72,8 @@ impl Shape for Triangle {
         if u >= 0.0 && v >= 0.0 && w >= 0.0 {
             record.time = time;
             record.normal = (u * self.n1 + v * self.n2 + w * self.n3).normalize();
-            // eprintln!("troo");
             true
         } else {
-            // eprintln!("false");
             false
         }
     }
