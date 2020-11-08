@@ -207,6 +207,52 @@ impl<T: Shape> Transformable<T> for T {
     }
 }
 
+// This implementation makes it so that chaining transforms doesn't keep nesting into
+// the Transformed<Transformed<Transformed<...>>> struct.
+impl<T: Shape> Transformed<T> {
+    /// Optimized transform: apply a translation
+    pub fn translate(mut self, v: &glm::DVec3) -> Transformed<T> {
+        self.transform = glm::translate(&glm::identity(), v) * self.transform;
+        self
+    }
+
+    /// Optimized transform: apply a scale, in 3 dimensions
+    pub fn scale(mut self, v: &glm::DVec3) -> Transformed<T> {
+        self.transform = glm::scale(&glm::identity(), v) * self.transform;
+        self
+    }
+
+    /// Optimized transform: apply a rotation, by an angle in radians about an axis
+    pub fn rotate(mut self, angle: f64, axis: &glm::DVec3) -> Transformed<T> {
+        self.transform = glm::rotate(&glm::identity(), angle, axis) * self.transform;
+        self
+    }
+
+    /// Optimized transform: apply a rotation around the X axis, by an angle in radians
+    pub fn rotate_x(mut self, angle: f64) -> Transformed<T> {
+        self.transform = glm::rotate_x(&glm::identity(), angle) * self.transform;
+        self
+    }
+
+    /// Optimized transform: apply a rotation around the Y axis, by an angle in radians
+    pub fn rotate_y(mut self, angle: f64) -> Transformed<T> {
+        self.transform = glm::rotate_y(&glm::identity(), angle) * self.transform;
+        self
+    }
+
+    /// Optimized transform: apply a rotation around the Z axis, by an angle in radians
+    pub fn rotate_z(mut self, angle: f64) -> Transformed<T> {
+        self.transform = glm::rotate_z(&glm::identity(), angle) * self.transform;
+        self
+    }
+
+    /// Optimized transform: apply a general homogeneous matrix
+    pub fn transform(mut self, transform: glm::DMat4) -> Transformed<T> {
+        self.transform = transform * self.transform;
+        self
+    }
+}
+
 /// Helper function to construct a sphere
 pub fn sphere() -> Sphere {
     Sphere
