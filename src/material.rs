@@ -3,6 +3,7 @@ use crate::color::{hex_color, Color};
 /// Represents a shader material with some physical properties
 ///
 /// TODO: more advanced materials, physically accurate (Fresnel)
+#[derive(Copy, Clone)]
 pub struct Material {
     /// Color of the material
     pub diffuse: Color,

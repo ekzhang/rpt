@@ -4,66 +4,32 @@ use crate::material::Material;
 use crate::shape::Shape;
 
 /// An object rendered in a scene
+///
+/// In the future, it may be more flexible to have an object trait that alllows a user
+/// to get the material at an intersection point. This would make sense to help for
+/// something like kd-trees, as it would let you create a kd-tree of different materials,
+/// and it would also work well with texture mapping.
+#[derive(Clone)]
 pub struct Object {
     /// Basic geometry of the object
     pub shape: Arc<dyn Shape>,
 
     /// Material of the object (possibly simple or complex)
     pub material: Material,
-
-    /// Affine transform applied to the object
-    pub transform: glm::DMat4,
 }
 
 impl Object {
     /// Create a new object from a shape, with default material
-    pub fn new(shape: Arc<dyn Shape>) -> Self {
+    pub fn new<T: Shape + 'static>(shape: Arc<T>) -> Self {
         Self {
             shape,
             material: Material::default(),
-            transform: glm::identity(),
         }
     }
 
     /// Set the material of the object (builder pattern)
     pub fn material(mut self, material: Material) -> Self {
         self.material = material;
-        self
-    }
-
-    /// Transform: prepend a translation
-    pub fn translate(mut self, v: &glm::DVec3) -> Self {
-        self.transform = glm::translate(&self.transform, v);
-        self
-    }
-
-    /// Transform: prepend a scale, in 3 dimensions
-    pub fn scale(mut self, v: &glm::DVec3) -> Self {
-        self.transform = glm::scale(&self.transform, v);
-        self
-    }
-
-    /// Transform: prepend a rotation, by an angle in radians about an axis
-    pub fn rotate(mut self, angle: f64, axis: &glm::DVec3) -> Self {
-        self.transform = glm::rotate(&self.transform, angle, axis);
-        self
-    }
-
-    /// Transform: prepend a rotation around the X axis, by an angle in radians
-    pub fn rotate_x(mut self, angle: f64) -> Self {
-        self.transform = glm::rotate_x(&self.transform, angle);
-        self
-    }
-
-    /// Transform: prepend a rotation around the Y axis, by an angle in radians
-    pub fn rotate_y(mut self, angle: f64) -> Self {
-        self.transform = glm::rotate_y(&self.transform, angle);
-        self
-    }
-
-    /// Transform: prepend a rotation around the Z axis, by an angle in radians
-    pub fn rotate_z(mut self, angle: f64) -> Self {
-        self.transform = glm::rotate_z(&self.transform, angle);
         self
     }
 }

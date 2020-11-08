@@ -5,11 +5,11 @@ fn main() -> color_eyre::Result<()> {
 
     let mut scene = Scene::new();
 
-    scene.add(
-        Object::new(load_obj("examples/teapot.obj")?)
-            .translate(&glm::vec3(0.0, -1.0, 0.0))
-            .scale(&glm::vec3(0.5, 0.5, 0.5)),
-    );
+    scene.add(Object::new(
+        load_obj("examples/teapot.obj")?
+            .scale(&glm::vec3(0.5, 0.5, 0.5))
+            .translate(&glm::vec3(0.0, -1.0, 0.0)),
+    ));
     scene.add(
         Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -1.0))
             .material(Material::diffuse(hex_color(0xaaaaaa))),

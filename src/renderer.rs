@@ -153,17 +153,17 @@ impl<'a> Renderer<'a> {
         }
     }
 
+    /// Loop through all objects in the scene to find the closest hit.
+    ///
+    /// Note that we intentionally do not use a `KdTree` to accelerate this computation.
+    /// The reason is that some objects, like planes, have infinite extent, so it would
+    /// not be appropriate to put them indiscriminately into a kd-tree.
     fn get_closest_hit(&self, ray: Ray) -> Option<(HitRecord, &'_ Object)> {
         let mut h = HitRecord::new();
         let mut hit = None;
         for object in &self.scene.objects {
-            let local_ray = ray.apply_transform(&glm::inverse(&object.transform));
-            if object.shape.intersect(&local_ray, EPSILON, &mut h) {
+            if object.shape.intersect(&ray, EPSILON, &mut h) {
                 hit = Some(object);
-                // Fix normal vectors by multiplying by M^-T
-                h.normal = (glm::inverse_transpose(glm::mat4_to_mat3(&object.transform))
-                    * h.normal)
-                    .normalize();
             }
         }
         Some((h, hit?))

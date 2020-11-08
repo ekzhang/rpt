@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader, SeekFrom};
 use std::sync::Arc;
 
+use crate::kdtree::{Bounded, BoundingBox};
 pub use cube::Cube;
 pub use mesh::{Mesh, Triangle};
 pub use plane::Plane;
@@ -75,6 +76,129 @@ impl HitRecord {
     /// Construct a new `HitRecord` at infinity
     pub fn new() -> Self {
         Default::default()
+    }
+}
+
+/// A shape that has been composed with a transformation. This struct allows a new
+/// bounding box to be computed automatically, which is useful for kd-tree
+/// acceleration. It might not be optimal in the case of rotations though.
+pub struct Transformed<T> {
+    shape: Arc<T>,
+    transform: glm::DMat4,
+}
+
+impl<T: Shape> Shape for Transformed<T> {
+    fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
+        let local_ray = ray.apply_transform(&glm::inverse(&self.transform));
+        if self.shape.intersect(&local_ray, t_min, record) {
+            // Fix normal vectors by multiplying by M^-T
+            record.normal = (glm::inverse_transpose(glm::mat4_to_mat3(&self.transform))
+                * record.normal)
+                .normalize();
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl<T: Bounded> Bounded for Transformed<T> {
+    fn bounding_box(&self) -> BoundingBox {
+        // This is not necessarily the best bounding box, but it is correct
+        let BoundingBox { p_min, p_max } = self.shape.bounding_box();
+        let v1 = (self.transform * glm::vec4(p_min.x, p_min.y, p_min.z, 1.0)).xyz();
+        let v2 = (self.transform * glm::vec4(p_min.x, p_min.y, p_max.z, 1.0)).xyz();
+        let v3 = (self.transform * glm::vec4(p_min.x, p_max.y, p_min.z, 1.0)).xyz();
+        let v4 = (self.transform * glm::vec4(p_min.x, p_max.y, p_max.z, 1.0)).xyz();
+        let v5 = (self.transform * glm::vec4(p_max.x, p_min.y, p_min.z, 1.0)).xyz();
+        let v6 = (self.transform * glm::vec4(p_max.x, p_min.y, p_max.z, 1.0)).xyz();
+        let v7 = (self.transform * glm::vec4(p_max.x, p_max.y, p_min.z, 1.0)).xyz();
+        let v8 = (self.transform * glm::vec4(p_max.x, p_max.y, p_max.z, 1.0)).xyz();
+        BoundingBox {
+            p_min: glm::min2(
+                &glm::min4(&v1, &v2, &v3, &v4),
+                &glm::min4(&v5, &v6, &v7, &v8),
+            ),
+            p_max: glm::max2(
+                &glm::max4(&v1, &v2, &v3, &v4),
+                &glm::max4(&v5, &v6, &v7, &v8),
+            ),
+        }
+    }
+}
+
+/// An object that can be transformed
+pub trait Transformable<T> {
+    /// Transform: apply a translation
+    fn translate(&self, v: &glm::DVec3) -> Arc<Transformed<T>>;
+
+    /// Transform: apply a scale, in 3 dimensions
+    fn scale(&self, v: &glm::DVec3) -> Arc<Transformed<T>>;
+
+    /// Transform: apply a rotation, by an angle in radians about an axis
+    fn rotate(&self, angle: f64, axis: &glm::DVec3) -> Arc<Transformed<T>>;
+
+    /// Transform: apply a rotation around the X axis, by an angle in radians
+    fn rotate_x(&self, angle: f64) -> Arc<Transformed<T>>;
+
+    /// Transform: apply a rotation around the Y axis, by an angle in radians
+    fn rotate_y(&self, angle: f64) -> Arc<Transformed<T>>;
+
+    /// Transform: apply a rotation around the Z axis, by an angle in radians
+    fn rotate_z(&self, angle: f64) -> Arc<Transformed<T>>;
+
+    /// Transform: apply a general homogeneous matrix
+    fn transform(&self, transform: glm::DMat4) -> Arc<Transformed<T>>;
+}
+
+impl<T: Shape> Transformable<T> for Arc<T> {
+    fn translate(&self, v: &glm::DVec3) -> Arc<Transformed<T>> {
+        Arc::new(Transformed {
+            shape: Arc::clone(self),
+            transform: glm::translate(&glm::identity(), v),
+        })
+    }
+
+    fn scale(&self, v: &glm::DVec3) -> Arc<Transformed<T>> {
+        Arc::new(Transformed {
+            shape: Arc::clone(self),
+            transform: glm::scale(&glm::identity(), v),
+        })
+    }
+
+    fn rotate(&self, angle: f64, axis: &glm::DVec3) -> Arc<Transformed<T>> {
+        Arc::new(Transformed {
+            shape: Arc::clone(self),
+            transform: glm::rotate(&glm::identity(), angle, axis),
+        })
+    }
+
+    fn rotate_x(&self, angle: f64) -> Arc<Transformed<T>> {
+        Arc::new(Transformed {
+            shape: Arc::clone(self),
+            transform: glm::rotate_x(&glm::identity(), angle),
+        })
+    }
+
+    fn rotate_y(&self, angle: f64) -> Arc<Transformed<T>> {
+        Arc::new(Transformed {
+            shape: Arc::clone(self),
+            transform: glm::rotate_y(&glm::identity(), angle),
+        })
+    }
+
+    fn rotate_z(&self, angle: f64) -> Arc<Transformed<T>> {
+        Arc::new(Transformed {
+            shape: Arc::clone(self),
+            transform: glm::rotate_z(&glm::identity(), angle),
+        })
+    }
+
+    fn transform(&self, transform: glm::DMat4) -> Arc<Transformed<T>> {
+        Arc::new(Transformed {
+            shape: Arc::clone(self),
+            transform,
+        })
     }
 }
 

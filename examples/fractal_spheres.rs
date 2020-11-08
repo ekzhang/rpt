@@ -11,10 +11,12 @@ fn gen(
     last_dir: Option<usize>,
 ) {
     scene.add(
-        Object::new(sphere())
-            .translate(&glm::vec3(x, y, z))
-            .scale(&glm::vec3(rad, rad, rad))
-            .material(Material::diffuse(hex_color(colors[depth]))),
+        Object::new(
+            sphere()
+                .scale(&glm::vec3(rad, rad, rad))
+                .translate(&glm::vec3(x, y, z)),
+        )
+        .material(Material::diffuse(hex_color(colors[depth]))),
     );
     if depth == colors.len() - 1 {
         return;
@@ -67,8 +69,8 @@ fn main() -> color_eyre::Result<()> {
         fov: std::f64::consts::FRAC_PI_6,
     };
     Renderer::new(&scene, camera)
-        .width(800)
-        .height(600)
+        .width(2000)
+        .height(1500)
         .render()
         .save("output.png")?;
 
