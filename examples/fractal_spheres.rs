@@ -2,10 +2,10 @@ use rpt::*;
 
 fn gen(
     scene: &mut Scene,
-    x: f32,
-    y: f32,
-    z: f32,
-    rad: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    rad: f64,
     colors: &[u32],
     depth: usize,
     last_dir: Option<usize>,
@@ -20,9 +20,9 @@ fn gen(
         return;
     }
     let disp = rad * 7.0 / 5.0;
-    let dx: [f32; 6] = [disp, -disp, 0.0, 0.0, 0.0, 0.0];
-    let dy: [f32; 6] = [0.0, 0.0, disp, -disp, 0.0, 0.0];
-    let dz: [f32; 6] = [0.0, 0.0, 0.0, 0.0, disp, -disp];
+    let dx: [f64; 6] = [disp, -disp, 0.0, 0.0, 0.0, 0.0];
+    let dy: [f64; 6] = [0.0, 0.0, disp, -disp, 0.0, 0.0];
+    let dz: [f64; 6] = [0.0, 0.0, 0.0, 0.0, disp, -disp];
     for i in 0..6 {
         if last_dir.is_none() || i != (last_dir.unwrap() ^ 1) {
             gen(
@@ -64,7 +64,7 @@ fn main() -> color_eyre::Result<()> {
         center: glm::vec3(2.0, 3.5, 7.0),
         direction: glm::vec3(-0.285714, -0.5, -1.0).normalize(),
         up: glm::vec3(0.0, 1.0, -0.5).normalize(),
-        fov: std::f32::consts::FRAC_PI_6,
+        fov: std::f64::consts::FRAC_PI_6,
     };
     Renderer::new(&scene, camera)
         .width(800)

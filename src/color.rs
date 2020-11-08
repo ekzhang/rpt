@@ -1,11 +1,11 @@
 /// A representation of an RGB color
-pub type Color = glm::Vec3;
+pub type Color = glm::DVec3;
 
 /// Construct a new color from a hex string, such as `hex_color(0xab23f0)`
 pub fn hex_color(x: u32) -> Color {
-    let r = ((x >> 16) & 0xff) as f32 / 255.0;
-    let g = ((x >> 8) & 0xff) as f32 / 255.0;
-    let b = ((x >> 0) & 0xff) as f32 / 255.0;
+    let r = ((x >> 16) & 0xff) as f64 / 255.0;
+    let g = ((x >> 8) & 0xff) as f64 / 255.0;
+    let b = ((x >> 0) & 0xff) as f64 / 255.0;
     glm::vec3(r, g, b)
 }
 

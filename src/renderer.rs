@@ -7,7 +7,7 @@ use crate::object::Object;
 use crate::scene::Scene;
 use crate::shape::{HitRecord, Ray};
 
-const EPSILON: f32 = 1e-4;
+const EPSILON: f64 = 1e-12;
 
 /// Builder object for rendering a scene
 pub struct Renderer<'a> {
@@ -28,16 +28,16 @@ pub struct Renderer<'a> {
 #[derive(Copy, Clone)]
 pub struct Camera {
     /// Location of the camera
-    pub center: glm::Vec3,
+    pub center: glm::DVec3,
 
     /// Direction that the camera is facing
-    pub direction: glm::Vec3,
+    pub direction: glm::DVec3,
 
     /// Direction of "up" for screen, must be orthogonal to `direction`
-    pub up: glm::Vec3,
+    pub up: glm::DVec3,
 
     /// Field of view in the longer direction as an angle in radians, in (0, pi)
-    pub fov: f32,
+    pub fov: f64,
 }
 
 impl Default for Camera {
@@ -46,14 +46,14 @@ impl Default for Camera {
             center: glm::vec3(0.0, 0.0, 10.0),
             direction: glm::vec3(0.0, 0.0, -1.0),
             up: glm::vec3(0.0, 1.0, 0.0), // we live in a y-up world...
-            fov: std::f32::consts::FRAC_PI_6,
+            fov: std::f64::consts::FRAC_PI_6,
         }
     }
 }
 
 impl Camera {
     /// Cast a ray, where (x, y) are normalized to the standard [-1, 1] box
-    pub fn cast_ray(&self, x: f32, y: f32) -> Ray {
+    pub fn cast_ray(&self, x: f64, y: f64) -> Ray {
         // cot(f / 2) = depth / radius
         let d = (self.fov / 2.0).tan().recip();
         let right = glm::cross(&self.direction, &self.up).normalize();
@@ -107,9 +107,9 @@ impl<'a> Renderer<'a> {
     }
 
     fn get_color(&self, x: u32, y: u32) -> Color {
-        let dim = std::cmp::max(self.width, self.height) as f32;
-        let xn = ((2 * x + 1) as f32 - self.width as f32) / dim;
-        let yn = ((2 * (self.height - y) - 1) as f32 - self.height as f32) / dim;
+        let dim = std::cmp::max(self.width, self.height) as f64;
+        let xn = ((2 * x + 1) as f64 - self.width as f64) / dim;
+        let yn = ((2 * (self.height - y) - 1) as f64 - self.height as f64) / dim;
         self.trace_ray(self.camera.cast_ray(xn, yn), 0)
     }
 
@@ -138,9 +138,9 @@ impl<'a> Renderer<'a> {
 
                         if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                             // Phong reflectance model (BRDF)
-                            let kd = f32::max(0.0, glm::dot(&dir_to_light, &h.normal));
+                            let kd = f64::max(0.0, glm::dot(&dir_to_light, &h.normal));
                             let diffuse = kd * intensity.component_mul(&object.material.diffuse);
-                            let ks = f32::max(0.0, glm::dot(&dir_to_light, &eye_r))
+                            let ks = f64::max(0.0, glm::dot(&dir_to_light, &eye_r))
                                 .powf(object.material.shininess);
                             let specular = ks * intensity.component_mul(&object.material.specular);
                             color += diffuse + specular;

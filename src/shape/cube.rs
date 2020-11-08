@@ -14,12 +14,12 @@ impl Bounded for Cube {
 }
 
 impl Shape for Cube {
-    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         let compute_interval = |dim: usize| {
-            let mut x1 = (-0.5_f32 - ray.origin[dim]) / ray.dir[dim];
-            let mut x2 = (0.5_f32 - ray.origin[dim]) / ray.dir[dim];
-            let mut x1n: glm::Vec3 = glm::zero();
-            let mut x2n: glm::Vec3 = glm::zero();
+            let mut x1 = (-0.5_f64 - ray.origin[dim]) / ray.dir[dim];
+            let mut x2 = (0.5_f64 - ray.origin[dim]) / ray.dir[dim];
+            let mut x1n: glm::DVec3 = glm::zero();
+            let mut x2n: glm::DVec3 = glm::zero();
             x1n[dim] = -1.0;
             x2n[dim] = 1.0;
             if x1 > x2 {

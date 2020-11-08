@@ -11,7 +11,7 @@ pub struct Material {
     pub specular: Color,
 
     /// Shininess (specular angle power-law falloff)
-    pub shininess: f32,
+    pub shininess: f64,
 }
 
 impl Default for Material {

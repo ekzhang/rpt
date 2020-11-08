@@ -4,23 +4,23 @@ use crate::kdtree::{Bounded, BoundingBox, KdTree};
 /// A triangle with three vertices and three normals
 pub struct Triangle {
     /// The first vertex
-    pub v1: glm::Vec3,
+    pub v1: glm::DVec3,
     /// The second vertex
-    pub v2: glm::Vec3,
+    pub v2: glm::DVec3,
     /// The third vertex
-    pub v3: glm::Vec3,
+    pub v3: glm::DVec3,
 
     /// The first normal vector
-    pub n1: glm::Vec3,
+    pub n1: glm::DVec3,
     /// The second normal vector
-    pub n2: glm::Vec3,
+    pub n2: glm::DVec3,
     /// The third normal vector
-    pub n3: glm::Vec3,
+    pub n3: glm::DVec3,
 }
 
 impl Triangle {
     /// Construct a triangle from three vertices, inferring the normals
-    pub fn from_vertices(v1: glm::Vec3, v2: glm::Vec3, v3: glm::Vec3) -> Self {
+    pub fn from_vertices(v1: glm::DVec3, v2: glm::DVec3, v3: glm::DVec3) -> Self {
         let n = (v2 - v1).cross(&(v3 - v1)).normalize();
         Self {
             v1,
@@ -43,7 +43,7 @@ impl Bounded for Triangle {
 }
 
 impl Shape for Triangle {
-    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         let (d0, d1) = (self.v2 - self.v1, self.v3 - self.v1);
         let plane_normal = d0.cross(&d1).normalize();
         let cosine = plane_normal.dot(&ray.dir);

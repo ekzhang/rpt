@@ -4,7 +4,7 @@ use super::{HitRecord, Ray, Shape};
 pub struct Sphere;
 
 impl Shape for Sphere {
-    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         // Translated directly from the GLOO source code, assuming radius = 1
         let a = glm::length2(&ray.dir);
         let b = 2.0 * glm::dot(&ray.dir, &ray.origin);

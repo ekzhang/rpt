@@ -12,16 +12,16 @@ pub trait Bounded {
 #[derive(Copy, Clone, Debug)]
 pub struct BoundingBox {
     /// The coordinates (x_min, y_min, z_min)
-    pub p_min: glm::Vec3,
+    pub p_min: glm::DVec3,
     /// The coordinates (x_max, y_max, z_max)
-    pub p_max: glm::Vec3,
+    pub p_max: glm::DVec3,
 }
 
 impl Default for BoundingBox {
     fn default() -> Self {
         BoundingBox {
-            p_min: glm::vec3(f32::INFINITY, f32::INFINITY, f32::INFINITY),
-            p_max: glm::vec3(-f32::INFINITY, -f32::INFINITY, -f32::INFINITY),
+            p_min: glm::vec3(f64::INFINITY, f64::INFINITY, f64::INFINITY),
+            p_max: glm::vec3(-f64::INFINITY, -f64::INFINITY, -f64::INFINITY),
         }
     }
 }
@@ -36,24 +36,24 @@ impl BoundingBox {
     }
 
     /// Returns the minimum and maximum times of intersection with a ray
-    pub fn intersect(&self, ray: &Ray) -> (f32, f32) {
+    pub fn intersect(&self, ray: &Ray) -> (f64, f64) {
         let x1 = (self.p_min.x - ray.origin.x) / ray.dir.x;
         let x2 = (self.p_max.x - ray.origin.x) / ray.dir.x;
-        let (x1, x2) = (f32::min(x1, x2), f32::max(x1, x2));
+        let (x1, x2) = (f64::min(x1, x2), f64::max(x1, x2));
         let y1 = (self.p_min.y - ray.origin.y) / ray.dir.y;
         let y2 = (self.p_max.y - ray.origin.y) / ray.dir.y;
-        let (y1, y2) = (f32::min(y1, y2), f32::max(y1, y2));
+        let (y1, y2) = (f64::min(y1, y2), f64::max(y1, y2));
         let z1 = (self.p_min.z - ray.origin.z) / ray.dir.z;
         let z2 = (self.p_max.z - ray.origin.z) / ray.dir.z;
-        let (z1, z2) = (f32::min(z1, z2), f32::max(z1, z2));
+        let (z1, z2) = (f64::min(z1, z2), f64::max(z1, z2));
         (
-            f32::max(f32::max(x1, y1), z1),
-            f32::min(f32::min(x2, y2), z2),
+            f64::max(f64::max(x1, y1), z1),
+            f64::min(f64::min(x2, y2), z2),
         )
     }
 
     /// Splits the bounding box with respect to a plane
-    pub fn split(&self, axis: usize, value: f32) -> (BoundingBox, BoundingBox) {
+    pub fn split(&self, axis: usize, value: f64) -> (BoundingBox, BoundingBox) {
         let mut p_mid_max = self.p_max;
         p_mid_max[axis] = value;
         let mut p_mid_min = self.p_min;
@@ -109,9 +109,9 @@ impl<T: Bounded> Bounded for KdTree<T> {
 }
 
 impl<T: Bounded + Shape> Shape for KdTree<T> {
-    fn intersect(&self, ray: &Ray, t_min: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         let (b_min, b_max) = self.bounds.intersect(ray);
-        if f32::max(b_min, t_min) > f32::min(b_max, record.time) {
+        if f64::max(b_min, t_min) > f64::min(b_max, record.time) {
             // No potential for intersecting, even the broader bounding box
             return false;
         }
@@ -128,7 +128,7 @@ impl<T: Bounded + Shape> KdTree<T> {
         node: &KdNode,
         bbox: &BoundingBox,
         ray: &Ray,
-        t_min: f32,
+        t_min: f64,
         record: &mut HitRecord,
     ) -> bool {
         let (b_min, b_max) = bbox.intersect(ray);
@@ -199,9 +199,9 @@ impl<T: Bounded + Shape> KdTree<T> {
 }
 
 enum KdNode {
-    SplitX(f32, Box<KdNode>, Box<KdNode>),
-    SplitY(f32, Box<KdNode>, Box<KdNode>),
-    SplitZ(f32, Box<KdNode>, Box<KdNode>),
+    SplitX(f64, Box<KdNode>, Box<KdNode>),
+    SplitY(f64, Box<KdNode>, Box<KdNode>),
+    SplitZ(f64, Box<KdNode>, Box<KdNode>),
     /// Stores a vector of _indices_ into the objects buffer
     Leaf(Vec<usize>),
 }
@@ -222,13 +222,13 @@ fn construct<T: Bounded>(objects: &[T], indices: Vec<usize>) -> Box<KdNode> {
         zs.push(bbox.p_max.z);
         bboxs.push(bbox);
     }
-    let float_cmp = |a: &f32, b: &f32| a.partial_cmp(b).unwrap();
+    let float_cmp = |a: &f64, b: &f64| a.partial_cmp(b).unwrap();
     xs.sort_by(float_cmp);
     ys.sort_by(float_cmp);
     zs.sort_by(float_cmp);
     let (mx, my, mz) = (median(&xs), median(&ys), median(&zs));
 
-    let partition_score = |dim: usize, value: f32| {
+    let partition_score = |dim: usize, value: f64| {
         let (mut left, mut right) = (0usize, 0usize);
         for i in 0..indices.len() {
             if bboxs[i].p_min[dim] <= value {
@@ -241,7 +241,7 @@ fn construct<T: Bounded>(objects: &[T], indices: Vec<usize>) -> Box<KdNode> {
         left.max(right)
     };
 
-    let partition = |dim: usize, value: f32| {
+    let partition = |dim: usize, value: f64| {
         let (mut left, mut right) = (Vec::new(), Vec::new());
         for (i, &index) in indices.iter().enumerate() {
             if bboxs[i].p_min[dim] <= value {
@@ -320,7 +320,7 @@ fn construct<T: Bounded>(objects: &[T], indices: Vec<usize>) -> Box<KdNode> {
     }
 }
 
-fn median(sorted_array: &[f32]) -> f32 {
+fn median(sorted_array: &[f64]) -> f64 {
     assert!(!sorted_array.is_empty());
     if sorted_array.len() % 2 == 1 {
         sorted_array[sorted_array.len() / 2]
