@@ -53,6 +53,10 @@ fn main() -> color_eyre::Result<()> {
             shininess: 5.0,
         }));
     }
+    scene.add(
+        Object::new(plane(glm::vec3(0.0, 0.0, 1.0), -6.0))
+            .material(Material::diffuse(hex_color(0xffcccc))),
+    );
 
     // black background
     scene.background = hex_color(0x000000);
