@@ -2,6 +2,7 @@
 use color_eyre::eyre::{anyhow, bail};
 use std::fs::File;
 use std::io::{prelude::*, BufReader, SeekFrom};
+use std::sync::Arc;
 
 use crate::kdtree::{Bounded, BoundingBox};
 pub use cube::Cube;
@@ -22,6 +23,12 @@ pub trait Shape: Send + Sync {
 }
 
 impl<T: Shape + ?Sized> Shape for Box<T> {
+    fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
+        self.as_ref().intersect(ray, t_min, record)
+    }
+}
+
+impl<T: Shape + ?Sized> Shape for Arc<T> {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         self.as_ref().intersect(ray, t_min, record)
     }

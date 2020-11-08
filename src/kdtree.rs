@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::shape::{HitRecord, Ray, Shape};
 
 const SCORE_THRESHOLD: f64 = 0.85;
@@ -9,6 +11,12 @@ pub trait Bounded: Shape {
 }
 
 impl<T: Bounded + ?Sized> Bounded for Box<T> {
+    fn bounding_box(&self) -> BoundingBox {
+        self.as_ref().bounding_box()
+    }
+}
+
+impl<T: Bounded + ?Sized> Bounded for Arc<T> {
     fn bounding_box(&self) -> BoundingBox {
         self.as_ref().bounding_box()
     }
