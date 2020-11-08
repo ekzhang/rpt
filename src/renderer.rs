@@ -126,7 +126,7 @@ impl<'a> Renderer<'a> {
 
                 for light in &self.scene.lights {
                     if let Light::Ambient(ambient_color) = light {
-                        color += ambient_color;
+                        color += ambient_color.component_mul(&object.material.diffuse);
                     } else {
                         let (intensity, dir_to_light, dist_to_light) = light.illuminate(world_pos);
                         let closest_hit = self
