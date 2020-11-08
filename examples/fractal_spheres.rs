@@ -47,10 +47,11 @@ fn main() -> color_eyre::Result<()> {
     let mut scene = Scene::new();
     for (i, sphere_group) in spheres.into_iter().enumerate() {
         println!("Level {}: {} spheres", i, sphere_group.len());
-        scene.add(
-            Object::new(KdTree::new(sphere_group))
-                .material(Material::diffuse(hex_color(colors[i]))),
-        );
+        scene.add(Object::new(KdTree::new(sphere_group)).material(Material {
+            diffuse: hex_color(colors[i]) * 0.8,
+            specular: glm::vec3(0.3, 0.3, 0.3),
+            shininess: 5.0,
+        }));
     }
 
     // black background
