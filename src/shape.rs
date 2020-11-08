@@ -45,14 +45,11 @@ impl Ray {
 
     /// Apply a homogeneous transformation to the ray (not normalizing direction)
     pub fn apply_transform(&self, transform: &glm::DMat4) -> Self {
-        let ref_pt = self.at(1.0);
         let origin = transform * (self.origin.to_homogeneous() + glm::vec4(0.0, 0.0, 0.0, 1.0));
-        let origin = glm::vec4_to_vec3(&(origin / origin.w));
-        let ref_pt = transform * (ref_pt.to_homogeneous() + glm::vec4(0.0, 0.0, 0.0, 1.0));
-        let ref_pt = glm::vec4_to_vec3(&(ref_pt / ref_pt.w));
+        let dir = transform * self.dir.to_homogeneous();
         Self {
-            origin,
-            dir: ref_pt - origin,
+            origin: origin.xyz(),
+            dir: dir.xyz(),
         }
     }
 }
