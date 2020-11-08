@@ -21,7 +21,7 @@ impl Shape for Plane {
         let time = (self.value - self.normal.dot(&ray.origin)) / cosine;
         if time >= t_min && time < record.time {
             record.time = time;
-            record.normal = self.normal.normalize();
+            record.normal = -self.normal.normalize() * cosine.signum();
             true
         } else {
             false
