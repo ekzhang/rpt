@@ -90,16 +90,29 @@ impl HitRecord {
 pub struct Transformed<T> {
     shape: T,
     transform: glm::DMat4,
+    inverse_transform: glm::DMat4,
+    inverse_normals: glm::DMat3,
+}
+
+impl<T> Transformed<T> {
+    fn new(shape: T, transform: glm::DMat4) -> Self {
+        let inverse_transform = glm::inverse(&transform);
+        let inverse_normals = glm::inverse_transpose(glm::mat4_to_mat3(&transform));
+        Self {
+            shape,
+            transform,
+            inverse_transform,
+            inverse_normals,
+        }
+    }
 }
 
 impl<T: Shape> Shape for Transformed<T> {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
-        let local_ray = ray.apply_transform(&glm::inverse(&self.transform));
+        let local_ray = ray.apply_transform(&self.inverse_transform);
         if self.shape.intersect(&local_ray, t_min, record) {
             // Fix normal vectors by multiplying by M^-T
-            record.normal = (glm::inverse_transpose(glm::mat4_to_mat3(&self.transform))
-                * record.normal)
-                .normalize();
+            record.normal = (self.inverse_normals * record.normal).normalize();
             true
         } else {
             false
@@ -158,52 +171,31 @@ pub trait Transformable<T> {
 
 impl<T: Shape> Transformable<T> for T {
     fn translate(self, v: &glm::DVec3) -> Transformed<T> {
-        Transformed {
-            shape: self,
-            transform: glm::translate(&glm::identity(), v),
-        }
+        Transformed::new(self, glm::translate(&glm::identity(), v))
     }
 
     fn scale(self, v: &glm::DVec3) -> Transformed<T> {
-        Transformed {
-            shape: self,
-            transform: glm::scale(&glm::identity(), v),
-        }
+        Transformed::new(self, glm::scale(&glm::identity(), v))
     }
 
     fn rotate(self, angle: f64, axis: &glm::DVec3) -> Transformed<T> {
-        Transformed {
-            shape: self,
-            transform: glm::rotate(&glm::identity(), angle, axis),
-        }
+        Transformed::new(self, glm::rotate(&glm::identity(), angle, axis))
     }
 
     fn rotate_x(self, angle: f64) -> Transformed<T> {
-        Transformed {
-            shape: self,
-            transform: glm::rotate_x(&glm::identity(), angle),
-        }
+        Transformed::new(self, glm::rotate_x(&glm::identity(), angle))
     }
 
     fn rotate_y(self, angle: f64) -> Transformed<T> {
-        Transformed {
-            shape: self,
-            transform: glm::rotate_y(&glm::identity(), angle),
-        }
+        Transformed::new(self, glm::rotate_y(&glm::identity(), angle))
     }
 
     fn rotate_z(self, angle: f64) -> Transformed<T> {
-        Transformed {
-            shape: self,
-            transform: glm::rotate_z(&glm::identity(), angle),
-        }
+        Transformed::new(self, glm::rotate_z(&glm::identity(), angle))
     }
 
     fn transform(self, transform: glm::DMat4) -> Transformed<T> {
-        Transformed {
-            shape: self,
-            transform,
-        }
+        Transformed::new(self, transform)
     }
 }
 
@@ -211,45 +203,53 @@ impl<T: Shape> Transformable<T> for T {
 // the Transformed<Transformed<Transformed<...>>> struct.
 impl<T: Shape> Transformed<T> {
     /// Optimized transform: apply a translation
-    pub fn translate(mut self, v: &glm::DVec3) -> Transformed<T> {
-        self.transform = glm::translate(&glm::identity(), v) * self.transform;
-        self
+    pub fn translate(self, v: &glm::DVec3) -> Transformed<T> {
+        Self::new(
+            self.shape,
+            glm::translate(&glm::identity(), v) * self.transform,
+        )
     }
 
     /// Optimized transform: apply a scale, in 3 dimensions
-    pub fn scale(mut self, v: &glm::DVec3) -> Transformed<T> {
-        self.transform = glm::scale(&glm::identity(), v) * self.transform;
-        self
+    pub fn scale(self, v: &glm::DVec3) -> Transformed<T> {
+        Self::new(self.shape, glm::scale(&glm::identity(), v) * self.transform)
     }
 
     /// Optimized transform: apply a rotation, by an angle in radians about an axis
-    pub fn rotate(mut self, angle: f64, axis: &glm::DVec3) -> Transformed<T> {
-        self.transform = glm::rotate(&glm::identity(), angle, axis) * self.transform;
-        self
+    pub fn rotate(self, angle: f64, axis: &glm::DVec3) -> Transformed<T> {
+        Self::new(
+            self.shape,
+            glm::rotate(&glm::identity(), angle, axis) * self.transform,
+        )
     }
 
     /// Optimized transform: apply a rotation around the X axis, by an angle in radians
-    pub fn rotate_x(mut self, angle: f64) -> Transformed<T> {
-        self.transform = glm::rotate_x(&glm::identity(), angle) * self.transform;
-        self
+    pub fn rotate_x(self, angle: f64) -> Transformed<T> {
+        Self::new(
+            self.shape,
+            glm::rotate_x(&glm::identity(), angle) * self.transform,
+        )
     }
 
     /// Optimized transform: apply a rotation around the Y axis, by an angle in radians
-    pub fn rotate_y(mut self, angle: f64) -> Transformed<T> {
-        self.transform = glm::rotate_y(&glm::identity(), angle) * self.transform;
-        self
+    pub fn rotate_y(self, angle: f64) -> Transformed<T> {
+        Self::new(
+            self.shape,
+            glm::rotate_y(&glm::identity(), angle) * self.transform,
+        )
     }
 
     /// Optimized transform: apply a rotation around the Z axis, by an angle in radians
-    pub fn rotate_z(mut self, angle: f64) -> Transformed<T> {
-        self.transform = glm::rotate_z(&glm::identity(), angle) * self.transform;
-        self
+    pub fn rotate_z(self, angle: f64) -> Transformed<T> {
+        Self::new(
+            self.shape,
+            glm::rotate_z(&glm::identity(), angle) * self.transform,
+        )
     }
 
     /// Optimized transform: apply a general homogeneous matrix
-    pub fn transform(mut self, transform: glm::DMat4) -> Transformed<T> {
-        self.transform = transform * self.transform;
-        self
+    pub fn transform(self, transform: glm::DMat4) -> Transformed<T> {
+        Self::new(self.shape, transform * self.transform)
     }
 }
 
