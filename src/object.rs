@@ -20,9 +20,9 @@ pub struct Object {
 
 impl Object {
     /// Create a new object from a shape, with default material
-    pub fn new<T: Shape + 'static>(shape: Arc<T>) -> Self {
+    pub fn new<T: Shape + 'static>(shape: T) -> Self {
         Self {
-            shape,
+            shape: Arc::new(shape),
             material: Material::default(),
         }
     }

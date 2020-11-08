@@ -1,4 +1,5 @@
 use super::{HitRecord, Ray, Shape};
+use crate::kdtree::{Bounded, BoundingBox};
 
 /// A unit sphere centered at the origin
 pub struct Sphere;
@@ -33,6 +34,15 @@ impl Shape for Sphere {
             true
         } else {
             false
+        }
+    }
+}
+
+impl Bounded for Sphere {
+    fn bounding_box(&self) -> BoundingBox {
+        BoundingBox {
+            p_min: glm::vec3(-1.0, -1.0, -1.0),
+            p_max: glm::vec3(1.0, 1.0, 1.0),
         }
     }
 }

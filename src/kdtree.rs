@@ -2,10 +2,16 @@ use crate::shape::{HitRecord, Ray, Shape};
 
 const SCORE_THRESHOLD: f64 = 0.85;
 
-/// A geometric object with a bounding box (needed for kd-tree intersections)
-pub trait Bounded {
-    /// Returns the object's bounding box
+/// A geometric shape with a bounding box (needed for kd-tree intersections)
+pub trait Bounded: Shape {
+    /// Returns the shape's bounding box
     fn bounding_box(&self) -> BoundingBox;
+}
+
+impl<T: Bounded + ?Sized> Bounded for Box<T> {
+    fn bounding_box(&self) -> BoundingBox {
+        self.as_ref().bounding_box()
+    }
 }
 
 /// A 3D axis-aligned bounding box
@@ -80,7 +86,7 @@ impl BoundingBox {
 /// The tree construction & ray intersection code was largely adapted from
 /// [https://github.com/fogleman/pt/blob/master/pt/tree.go]. Parts of the
 /// construction algorithm were also taken from PBRT.
-pub struct KdTree<T: Bounded> {
+pub struct KdTree<T> {
     root: Box<KdNode>,
     objects: Vec<T>,
     bounds: BoundingBox,
@@ -108,7 +114,7 @@ impl<T: Bounded> Bounded for KdTree<T> {
     }
 }
 
-impl<T: Bounded + Shape> Shape for KdTree<T> {
+impl<T: Bounded> Shape for KdTree<T> {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         let (b_min, b_max) = self.bounds.intersect(ray);
         if f64::max(b_min, t_min) > f64::min(b_max, record.time) {
@@ -119,7 +125,7 @@ impl<T: Bounded + Shape> Shape for KdTree<T> {
     }
 }
 
-impl<T: Bounded + Shape> KdTree<T> {
+impl<T: Bounded> KdTree<T> {
     /// Intersect the current ray with a given subtree.
     ///
     /// Guarantee: we always find the closest intersection in the current kd-cell, if any.

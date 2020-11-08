@@ -2,7 +2,6 @@
 use color_eyre::eyre::{anyhow, bail};
 use std::fs::File;
 use std::io::{prelude::*, BufReader, SeekFrom};
-use std::sync::Arc;
 
 use crate::kdtree::{Bounded, BoundingBox};
 pub use cube::Cube;
@@ -20,6 +19,12 @@ pub trait Shape: Send + Sync {
     /// Intersect the shape with a ray, for `t >= t_min`, returning true and mutating
     /// `h` if an intersection was found before the current closest one
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool;
+}
+
+impl<T: Shape + ?Sized> Shape for Box<T> {
+    fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
+        self.as_ref().intersect(ray, t_min, record)
+    }
 }
 
 /// An infinite ray in one direction
@@ -83,7 +88,7 @@ impl HitRecord {
 /// bounding box to be computed automatically, which is useful for kd-tree
 /// acceleration. It might not be optimal in the case of rotations though.
 pub struct Transformed<T> {
-    shape: Arc<T>,
+    shape: T,
     transform: glm::DMat4,
 }
 
@@ -130,91 +135,91 @@ impl<T: Bounded> Bounded for Transformed<T> {
 /// An object that can be transformed
 pub trait Transformable<T> {
     /// Transform: apply a translation
-    fn translate(&self, v: &glm::DVec3) -> Arc<Transformed<T>>;
+    fn translate(self, v: &glm::DVec3) -> Transformed<T>;
 
     /// Transform: apply a scale, in 3 dimensions
-    fn scale(&self, v: &glm::DVec3) -> Arc<Transformed<T>>;
+    fn scale(self, v: &glm::DVec3) -> Transformed<T>;
 
     /// Transform: apply a rotation, by an angle in radians about an axis
-    fn rotate(&self, angle: f64, axis: &glm::DVec3) -> Arc<Transformed<T>>;
+    fn rotate(self, angle: f64, axis: &glm::DVec3) -> Transformed<T>;
 
     /// Transform: apply a rotation around the X axis, by an angle in radians
-    fn rotate_x(&self, angle: f64) -> Arc<Transformed<T>>;
+    fn rotate_x(self, angle: f64) -> Transformed<T>;
 
     /// Transform: apply a rotation around the Y axis, by an angle in radians
-    fn rotate_y(&self, angle: f64) -> Arc<Transformed<T>>;
+    fn rotate_y(self, angle: f64) -> Transformed<T>;
 
     /// Transform: apply a rotation around the Z axis, by an angle in radians
-    fn rotate_z(&self, angle: f64) -> Arc<Transformed<T>>;
+    fn rotate_z(self, angle: f64) -> Transformed<T>;
 
     /// Transform: apply a general homogeneous matrix
-    fn transform(&self, transform: glm::DMat4) -> Arc<Transformed<T>>;
+    fn transform(self, transform: glm::DMat4) -> Transformed<T>;
 }
 
-impl<T: Shape> Transformable<T> for Arc<T> {
-    fn translate(&self, v: &glm::DVec3) -> Arc<Transformed<T>> {
-        Arc::new(Transformed {
-            shape: Arc::clone(self),
+impl<T: Shape> Transformable<T> for T {
+    fn translate(self, v: &glm::DVec3) -> Transformed<T> {
+        Transformed {
+            shape: self,
             transform: glm::translate(&glm::identity(), v),
-        })
+        }
     }
 
-    fn scale(&self, v: &glm::DVec3) -> Arc<Transformed<T>> {
-        Arc::new(Transformed {
-            shape: Arc::clone(self),
+    fn scale(self, v: &glm::DVec3) -> Transformed<T> {
+        Transformed {
+            shape: self,
             transform: glm::scale(&glm::identity(), v),
-        })
+        }
     }
 
-    fn rotate(&self, angle: f64, axis: &glm::DVec3) -> Arc<Transformed<T>> {
-        Arc::new(Transformed {
-            shape: Arc::clone(self),
+    fn rotate(self, angle: f64, axis: &glm::DVec3) -> Transformed<T> {
+        Transformed {
+            shape: self,
             transform: glm::rotate(&glm::identity(), angle, axis),
-        })
+        }
     }
 
-    fn rotate_x(&self, angle: f64) -> Arc<Transformed<T>> {
-        Arc::new(Transformed {
-            shape: Arc::clone(self),
+    fn rotate_x(self, angle: f64) -> Transformed<T> {
+        Transformed {
+            shape: self,
             transform: glm::rotate_x(&glm::identity(), angle),
-        })
+        }
     }
 
-    fn rotate_y(&self, angle: f64) -> Arc<Transformed<T>> {
-        Arc::new(Transformed {
-            shape: Arc::clone(self),
+    fn rotate_y(self, angle: f64) -> Transformed<T> {
+        Transformed {
+            shape: self,
             transform: glm::rotate_y(&glm::identity(), angle),
-        })
+        }
     }
 
-    fn rotate_z(&self, angle: f64) -> Arc<Transformed<T>> {
-        Arc::new(Transformed {
-            shape: Arc::clone(self),
+    fn rotate_z(self, angle: f64) -> Transformed<T> {
+        Transformed {
+            shape: self,
             transform: glm::rotate_z(&glm::identity(), angle),
-        })
+        }
     }
 
-    fn transform(&self, transform: glm::DMat4) -> Arc<Transformed<T>> {
-        Arc::new(Transformed {
-            shape: Arc::clone(self),
+    fn transform(self, transform: glm::DMat4) -> Transformed<T> {
+        Transformed {
+            shape: self,
             transform,
-        })
+        }
     }
 }
 
-/// Helper function to construct an `Arc` for a sphere
-pub fn sphere() -> Arc<Sphere> {
-    Arc::new(Sphere)
+/// Helper function to construct a sphere
+pub fn sphere() -> Sphere {
+    Sphere
 }
 
-/// Helper function to construct an `Arc` for a plane
-pub fn plane(normal: glm::DVec3, value: f64) -> Arc<Plane> {
-    Arc::new(Plane { normal, value })
+/// Helper function to construct a plane
+pub fn plane(normal: glm::DVec3, value: f64) -> Plane {
+    Plane { normal, value }
 }
 
-/// Helper function to construct an `Arc` for a cube
-pub fn cube() -> Arc<Cube> {
-    Arc::new(Cube)
+/// Helper function to construct a cube
+pub fn cube() -> Cube {
+    Cube
 }
 
 fn parse_index(value: &str) -> Option<usize> {
@@ -230,7 +235,7 @@ fn parse_index(value: &str) -> Option<usize> {
 /// Helper function to load a mesh from a Wavefront .OBJ file
 ///
 /// See https://www.cs.cmu.edu/~mbz/personal/graphics/obj.html for details.
-pub fn load_obj(path: &str) -> color_eyre::Result<Arc<Mesh>> {
+pub fn load_obj(path: &str) -> color_eyre::Result<Mesh> {
     // TODO: no texture or material support yet
     let mut vertices: Vec<glm::DVec3> = Vec::new();
     let mut normals: Vec<glm::DVec3> = Vec::new();
@@ -313,14 +318,14 @@ pub fn load_obj(path: &str) -> color_eyre::Result<Arc<Mesh>> {
         }
     }
 
-    Ok(Arc::new(Mesh::new(triangles)))
+    Ok(Mesh::new(triangles))
 }
 
 /// Helper function to load a mesh from a .STL file
 ///
 /// See https://en.wikipedia.org/wiki/STL_%28file_format%29 and
 /// https://stackoverflow.com/a/26171886 for details.
-pub fn load_stl(path: &str) -> color_eyre::Result<Arc<Mesh>> {
+pub fn load_stl(path: &str) -> color_eyre::Result<Mesh> {
     let size = std::fs::metadata(path)?.len();
     if size < 15 {
         bail!("Opened .STL file {} is too short", path);
@@ -348,7 +353,7 @@ pub fn load_stl(path: &str) -> color_eyre::Result<Arc<Mesh>> {
     }
 }
 
-fn load_stl_ascii(file: File) -> color_eyre::Result<Arc<Mesh>> {
+fn load_stl_ascii(file: File) -> color_eyre::Result<Mesh> {
     let reader = BufReader::new(file);
     let mut lines = reader.lines().skip(1);
     let mut triangles = Vec::new();
@@ -387,10 +392,10 @@ fn load_stl_ascii(file: File) -> color_eyre::Result<Arc<Mesh>> {
             n3: vn,
         });
     }
-    Ok(Arc::new(Mesh::new(triangles)))
+    Ok(Mesh::new(triangles))
 }
 
-fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Arc<Mesh>> {
+fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Mesh> {
     let mut reader = BufReader::new(file);
     let mut triangles = Vec::new();
     let read_vec3 = |reader: &mut BufReader<File>| -> color_eyre::Result<glm::DVec3> {
@@ -418,5 +423,5 @@ fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Arc<Mes
             n3: vn,
         });
     }
-    Ok(Arc::new(Mesh::new(triangles)))
+    Ok(Mesh::new(triangles))
 }
