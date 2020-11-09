@@ -36,7 +36,7 @@ fn main() -> color_eyre::Result<()> {
             .material(Material::specular(hex_color(0xaaaaaa), 0.5)),
     );
 
-    scene.add(Light::Ambient(glm::vec3(0.1, 0.1, 0.1)));
+    scene.add(Light::Ambient(glm::vec3(0.01, 0.01, 0.01)));
     scene.add(Light::Point(
         glm::vec3(36.0, 36.0, 36.0),
         glm::vec3(0.0, 5.0, 5.0),

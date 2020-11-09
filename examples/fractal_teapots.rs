@@ -67,7 +67,7 @@ fn main() -> color_eyre::Result<()> {
     // black background
     scene.background = hex_color(0x000000);
 
-    scene.add(Light::Ambient(glm::vec3(0.2, 0.2, 0.2)));
+    scene.add(Light::Ambient(glm::vec3(0.02, 0.02, 0.02)));
     scene.add(Light::Directional(
         glm::vec3(0.2, 0.2, 0.2),
         glm::vec3(0.0, -0.65, -1.0).normalize(),
