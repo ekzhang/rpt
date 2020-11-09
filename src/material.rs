@@ -57,7 +57,7 @@ impl Material {
     /// Clear material with a specified index of refraction and roughness (such as glass)
     pub fn clear(index: f64, roughness: f64) -> Material {
         Material {
-            color: glm::vec3(0.0, 0.0, 0.0),
+            color: glm::vec3(1.0, 1.0, 1.0),
             index,
             roughness,
             metallic: 0.0,
