@@ -38,7 +38,7 @@ fn main() -> color_eyre::Result<()> {
 
     scene.add(Light::Ambient(glm::vec3(0.01, 0.01, 0.01)));
     scene.add(Light::Point(
-        glm::vec3(36.0, 36.0, 36.0),
+        glm::vec3(100.0, 100.0, 100.0),
         glm::vec3(0.0, 5.0, 5.0),
     ));
 

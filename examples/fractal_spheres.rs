@@ -49,7 +49,7 @@ fn main() -> color_eyre::Result<()> {
         println!("Level {}: {} spheres", i, sphere_group.len());
         scene.add(
             Object::new(KdTree::new(sphere_group))
-                .material(Material::specular(hex_color(colors[i]), 0.15)),
+                .material(Material::specular(hex_color(colors[i]), 0.25)),
         );
     }
     scene.add(
@@ -62,11 +62,11 @@ fn main() -> color_eyre::Result<()> {
 
     scene.add(Light::Ambient(glm::vec3(0.02, 0.02, 0.02)));
     scene.add(Light::Directional(
-        glm::vec3(0.2, 0.2, 0.2),
+        glm::vec3(0.6, 0.6, 0.6),
         glm::vec3(0.0, -0.65, -1.0).normalize(),
     ));
     scene.add(Light::Point(
-        glm::vec3(36.0, 36.0, 36.0),
+        glm::vec3(100.0, 100.0, 100.0),
         glm::vec3(0.0, 5.0, 5.0),
     ));
 

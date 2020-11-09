@@ -139,35 +139,8 @@ impl<'a> Renderer<'a> {
 
                         if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                             // Cook-Torrance BRDF with GGX microfacet distribution
-                            // Useful reference: https://computergraphics.stackexchange.com/q/4394
-                            let halfway = (dir_to_light + eye).normalize();
-                            let nh2 = halfway.dot(&h.normal).powf(2.0);
-
-                            // d: microfacet distribution function
-                            let m2 = mat.roughness * mat.roughness;
-                            let d = ((nh2 - 1.0) / (m2 * nh2)).exp()
-                                / (m2 * glm::pi::<f64>() * nh2 * nh2);
-
-                            // f: fresnel, schlick's approximation
-                            let f0 = ((mat.index - 1.0) / (mat.index + 1.0)).powf(2.0);
-                            let f0 = glm::lerp(&glm::vec3(f0, f0, f0), &mat.color, mat.metallic);
-                            let f = f0
-                                + (glm::vec3(1.0, 1.0, 1.0) - f0)
-                                    * (1.0 - dir_to_light.dot(&halfway)).powf(5.0);
-
-                            // g: geometry function, microfacet shadowing
-                            let g = h.normal.dot(&dir_to_light).min(h.normal.dot(&eye));
-                            let g = (2.0 * h.normal.dot(&halfway) * g) / (eye.dot(&halfway));
-                            let g = g.min(1.0);
-
-                            // BRDF: putting it all together
-                            let specular =
-                                (d * f * g / (4.0 * h.normal.dot(&eye))).component_mul(&intensity);
-                            let diffuse = (glm::vec3(1.0, 1.0, 1.0) - f)
-                                .component_mul(&mat.color)
-                                .component_mul(&intensity)
-                                * dir_to_light.dot(&h.normal);
-                            color += specular + diffuse;
+                            let f = mat.bsdf(&h.normal, &eye, &dir_to_light);
+                            color += f.component_mul(&intensity) * dir_to_light.dot(&h.normal);
                         }
                     }
                 }
