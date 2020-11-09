@@ -13,7 +13,7 @@ fn main() -> color_eyre::Result<()> {
                 .scale(&glm::vec3(0.5, 0.3, 0.4))
                 .translate(&glm::vec3(0.4, -0.8, 4.0)),
         )
-        .material(Material::diffuse(hex_color(0xff00ff))),
+        .material(Material::specular(hex_color(0xff00ff), 0.5)),
     );
     scene.add(
         Object::new(
@@ -21,11 +21,7 @@ fn main() -> color_eyre::Result<()> {
                 .scale(&glm::vec3(0.5, 0.5, 0.5))
                 .translate(&glm::vec3(1.5, -0.5, 1.0)),
         )
-        .material(Material {
-            diffuse: hex_color(0x0000ff),
-            specular: glm::vec3(0.25, 0.25, 0.25),
-            shininess: 10.0,
-        }),
+        .material(Material::specular(hex_color(0x0000ff), 0.1)),
     );
     scene.add(
         Object::new(
@@ -33,15 +29,11 @@ fn main() -> color_eyre::Result<()> {
                 .scale(&glm::vec3(0.5, 0.5, 0.5))
                 .translate(&glm::vec3(-1.5, -0.5, 1.0)),
         )
-        .material(Material {
-            diffuse: hex_color(0x00ff00),
-            specular: glm::vec3(0.25, 0.25, 0.25),
-            shininess: 10.0,
-        }),
+        .material(Material::specular(hex_color(0x00ff00), 0.1)),
     );
     scene.add(
         Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -1.0))
-            .material(Material::diffuse(hex_color(0xaaaaaa))),
+            .material(Material::specular(hex_color(0xaaaaaa), 0.5)),
     );
 
     scene.add(Light::Ambient(glm::vec3(0.1, 0.1, 0.1)));

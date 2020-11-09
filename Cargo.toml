@@ -6,8 +6,9 @@ edition = "2018"
 
 [dependencies]
 color-eyre = "0.5.6"
-image = "0.23.10"
 glm = { version = "0.8.0", package = "nalgebra-glm" }
+image = "0.23.10"
+rand = "0.7.3"
 rayon = "1.5.0"
 
 [profile.dev]

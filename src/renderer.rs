@@ -121,12 +121,13 @@ impl<'a> Renderer<'a> {
             None => self.scene.background,
             Some((h, object)) => {
                 let world_pos = ray.at(h.time);
-                let eye_r = glm::reflect_vec(&glm::normalize(&ray.dir), &h.normal);
-                let mut color = glm::vec3(0.0, 0.0, 0.0);
+                let eye = -glm::normalize(&ray.dir);
+                let mat = object.material;
+                let mut color = mat.emittance * mat.color;
 
                 for light in &self.scene.lights {
                     if let Light::Ambient(ambient_color) = light {
-                        color += ambient_color.component_mul(&object.material.diffuse);
+                        color += ambient_color.component_mul(&object.material.color);
                     } else {
                         let (intensity, dir_to_light, dist_to_light) = light.illuminate(world_pos);
                         let closest_hit = self
@@ -137,13 +138,36 @@ impl<'a> Renderer<'a> {
                             .map(|(r, _)| r.time);
 
                         if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
-                            // Phong reflectance model (BRDF)
-                            let kd = f64::max(0.0, glm::dot(&dir_to_light, &h.normal));
-                            let diffuse = kd * intensity.component_mul(&object.material.diffuse);
-                            let ks = f64::max(0.0, glm::dot(&dir_to_light, &eye_r))
-                                .powf(object.material.shininess);
-                            let specular = ks * intensity.component_mul(&object.material.specular);
-                            color += diffuse + specular;
+                            // Cook-Torrance BRDF with GGX microfacet distribution
+                            // Useful reference: https://computergraphics.stackexchange.com/q/4394
+                            let halfway = (dir_to_light + eye).normalize();
+                            let nh2 = halfway.dot(&h.normal).powf(2.0);
+
+                            // d: microfacet distribution function
+                            let m2 = mat.roughness * mat.roughness;
+                            let d = ((nh2 - 1.0) / (m2 * nh2)).exp()
+                                / (m2 * glm::pi::<f64>() * nh2 * nh2);
+
+                            // f: fresnel, schlick's approximation
+                            let f0 = ((mat.index - 1.0) / (mat.index + 1.0)).powf(2.0);
+                            let f0 = glm::lerp(&glm::vec3(f0, f0, f0), &mat.color, mat.metallic);
+                            let f = f0
+                                + (glm::vec3(1.0, 1.0, 1.0) - f0)
+                                    * (1.0 - dir_to_light.dot(&halfway)).powf(5.0);
+
+                            // g: geometry function, microfacet shadowing
+                            let g = h.normal.dot(&dir_to_light).min(h.normal.dot(&eye));
+                            let g = (2.0 * h.normal.dot(&halfway) * g) / (eye.dot(&halfway));
+                            let g = g.min(1.0);
+
+                            // BRDF: putting it all together
+                            let specular =
+                                (d * f * g / (4.0 * h.normal.dot(&eye))).component_mul(&intensity);
+                            let diffuse = (glm::vec3(1.0, 1.0, 1.0) - f)
+                                .component_mul(&mat.color)
+                                .component_mul(&intensity)
+                                * dir_to_light.dot(&h.normal);
+                            color += specular + diffuse;
                         }
                     }
                 }
