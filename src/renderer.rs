@@ -1,4 +1,5 @@
 use image::RgbImage;
+use rand::Rng;
 use rayon::prelude::*;
 
 use crate::buffer::Buffer;
@@ -155,55 +156,44 @@ impl<'a> Renderer<'a> {
         color / f64::from(self.num_samples)
     }
 
-    fn trace_ray<Rng: rand::Rng>(&self, ray: Ray, num_bounces: u32, rng: &mut Rng) -> Color {
+    fn trace_ray(&self, ray: Ray, num_bounces: u32, rng: &mut impl Rng) -> Color {
         match self.get_closest_hit(ray) {
             None => self.scene.background,
             Some((h, object)) => {
                 let world_pos = ray.at(h.time);
-                let eye = -glm::normalize(&ray.dir);
                 let mat = object.material;
+                let wo = -glm::normalize(&ray.dir);
                 let mut color = mat.emittance * mat.color;
 
                 for light in &self.scene.lights {
                     if let Light::Ambient(ambient_color) = light {
                         color += ambient_color.component_mul(&object.material.color);
                     } else {
-                        let (intensity, dir_to_light, dist_to_light) = light.illuminate(world_pos);
+                        let (intensity, wi, dist_to_light) = light.illuminate(world_pos);
                         let closest_hit = self
                             .get_closest_hit(Ray {
                                 origin: world_pos,
-                                dir: dir_to_light,
+                                dir: wi,
                             })
                             .map(|(r, _)| r.time);
 
                         if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                             // Cook-Torrance BRDF with GGX microfacet distribution
-                            let f = mat.bsdf(&h.normal, &eye, &dir_to_light);
-                            color += f.component_mul(&intensity) * dir_to_light.dot(&h.normal);
+                            let f = mat.bsdf(&h.normal, &wo, &wi);
+                            color += f.component_mul(&intensity) * wi.dot(&h.normal);
                         }
                     }
                 }
                 if num_bounces < self.max_bounces {
-                    let theta = rng.gen_range(0.0, 2.0 * std::f64::consts::PI);
-                    let z = rng.gen_range(0.0, 1.0);
-                    let xy_length = f64::sqrt(1.0 - z * z);
-                    let x = xy_length * f64::cos(theta);
-                    let y = xy_length * f64::sin(theta);
-                    let mut orthobasis1 = h.normal.cross(&glm::vec3(0.0, 0.0, 1.0));
-                    if glm::length2(&orthobasis1) < EPSILON {
-                        orthobasis1 = h.normal.cross(&glm::vec3(0.0, 1.0, 0.0));
-                    }
-                    orthobasis1 = orthobasis1.normalize();
-                    let orthobasis2 = h.normal.cross(&orthobasis1).normalize();
-                    let dir = x * orthobasis1 + y * orthobasis2 + z * h.normal;
+                    let (wi, pdf) = mat.sample_f(&h.normal, &wo, rng);
+                    let f = mat.bsdf(&h.normal, &wo, &wi);
                     let ray = Ray {
                         origin: world_pos,
-                        dir,
+                        dir: wi,
                     };
-                    let f = mat.bsdf(&h.normal, &eye, &dir);
-                    color += std::f64::consts::TAU
+                    color += 1.0 / pdf
                         * f.component_mul(&self.trace_ray(ray, num_bounces + 1, rng))
-                        * dir.dot(&h.normal);
+                        * wi.dot(&h.normal);
                 }
 
                 color

@@ -40,18 +40,32 @@ impl Buffer {
     /// Converts the current buffer to an image
     pub fn image(&self) -> RgbImage {
         let mut buf = Vec::new();
-        for pix_samples in &self.samples {
-            assert!(
-                !pix_samples.is_empty(),
-                "Pixel found with no samples, cannot generate image."
-            );
-            let color = pix_samples.iter().sum::<glm::DVec3>() / (pix_samples.len() as f64);
-            let [r, g, b] = color_bytes(&color);
-            buf.push(r);
-            buf.push(g);
-            buf.push(b);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let color = self.get_filtered_color(x, y);
+                let [r, g, b] = color_bytes(&color);
+                buf.push(r);
+                buf.push(g);
+                buf.push(b);
+            }
         }
         ImageBuffer::from_raw(self.width, self.height, buf)
             .expect("Image buffer has incorrect size")
+    }
+
+    fn get_filtered_color(&self, x: u32, y: u32) -> Color {
+        let mut color = glm::vec3(0.0, 0.0, 0.0);
+        let mut count = 0;
+        for i in x.saturating_sub(1)..=(x + 1) {
+            for j in y.saturating_sub(1)..=(y + 1) {
+                if i < self.width && j < self.height {
+                    let index = (j * self.width + i) as usize;
+                    color += self.samples[index].iter().sum::<Color>();
+                    count += self.samples[index].len();
+                }
+            }
+        }
+        assert!(count != 0, "Pixel found with no samples");
+        color / (count as f64)
     }
 }

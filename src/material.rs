@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::color::{hex_color, Color};
 
 /// Represents a shader material with some physical properties
@@ -145,4 +147,37 @@ impl Material {
         let diffuse = (glm::vec3(1.0, 1.0, 1.0) - f).component_mul(&self.color) / glm::pi::<f64>();
         specular + diffuse
     }
+
+    /// Sample the z >= 0 hemisphere, returning a tuple of direction vector and PDF
+    ///
+    /// This implementation does a simple cosine-sampling using Malley's method.
+    /// http://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations.html
+    pub fn sample_f(
+        &self,
+        n: &glm::DVec3,
+        _wo: &glm::DVec3,
+        rng: &mut impl Rng,
+    ) -> (glm::DVec3, f64) {
+        let mut x = rng.gen_range(-1.0, 1.0);
+        let mut y = rng.gen_range(-1.0, 1.0);
+        while x * x + y * y > 1.0 {
+            x = rng.gen_range(-1.0, 1.0);
+            y = rng.gen_range(-1.0, 1.0);
+        }
+        let z = (1.0_f64 - x * x - y * y).sqrt();
+        (
+            local_to_world(n) * glm::vec3(x, y, z),
+            z * std::f64::consts::FRAC_1_PI,
+        )
+    }
+}
+
+fn local_to_world(n: &glm::DVec3) -> glm::DMat3 {
+    let ns = if n.x.is_normal() {
+        glm::vec3(n.y, -n.x, 0.0).normalize()
+    } else {
+        glm::vec3(0.0, -n.z, n.y).normalize()
+    };
+    let nss = n.cross(&ns);
+    glm::mat3(ns.x, nss.x, n.x, ns.y, nss.y, n.y, ns.z, nss.z, n.z)
 }
