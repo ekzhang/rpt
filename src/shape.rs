@@ -282,6 +282,15 @@ fn parse_index(value: &str) -> Option<usize> {
     })
 }
 
+/// Simple polygon made from triangles
+pub fn polygon(verts: &[glm::DVec3]) -> Mesh {
+    let mut tris = Vec::new();
+    for i in 1..(verts.len() - 1) {
+        tris.push(Triangle::from_vertices(verts[0], verts[i], verts[i + 1]));
+    }
+    Mesh::new(tris)
+}
+
 /// Helper function to load a mesh from a Wavefront .OBJ file
 ///
 /// See https://www.cs.cmu.edu/~mbz/personal/graphics/obj.html for details.
