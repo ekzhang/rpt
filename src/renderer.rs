@@ -22,6 +22,12 @@ pub struct Renderer<'a> {
 
     /// The height of the output image
     pub height: u32,
+
+    /// The maximum number of ray bounces
+    pub max_bounces: u32,
+
+    /// Number of random paths traced per pixel
+    pub paths_per_pixel: u32,
 }
 
 /// A simple perspective camera
@@ -73,6 +79,8 @@ impl<'a> Renderer<'a> {
             camera,
             width: 800,
             height: 600,
+            max_bounces: 0,
+            paths_per_pixel: 1,
         }
     }
 
@@ -85,6 +93,18 @@ impl<'a> Renderer<'a> {
     /// Set the height of the rendered scene
     pub fn height(mut self, height: u32) -> Self {
         self.height = height;
+        self
+    }
+
+    /// Set the maximum number of ray bounces when ray is traced
+    pub fn max_bounces(mut self, max_bounces: u32) -> Self {
+        self.max_bounces = max_bounces;
+        self
+    }
+
+    /// Set the number of random paths traced per pixel
+    pub fn paths_per_pixel(mut self, paths_per_pixel: u32) -> Self {
+        self.paths_per_pixel = paths_per_pixel;
         self
     }
 
@@ -103,20 +123,42 @@ impl<'a> Renderer<'a> {
                 buf
             })
             .collect();
-        ImageBuffer::from_raw(self.width, self.height, buf).expect("Image buffer has wrong size")
+        let mut vec = buf.to_vec();
+        const BOX_SIZE: u32 = 1;
+        for i in 0..self.height {
+            for j in 0..self.width {
+                for k in 0..3 {
+                    let mut sum = 0u32;
+                    let mut cnt = 0u32;
+                    for di in 0..BOX_SIZE {
+                        for dj in 0..BOX_SIZE {
+                            if i + di < self.height && j + dj < self.width {
+                                sum += vec[((i + di) * self.width * 3 + (j + dj) * 3 + k) as usize]
+                                    as u32;
+                                cnt += 1;
+                            }
+                        }
+                    }
+                    vec[(i * self.width * 3 + j * 3 + k) as usize] = (sum / cnt) as u8;
+                }
+            }
+        }
+        ImageBuffer::from_raw(self.width, self.height, vec).expect("Image buffer has wrong size")
     }
 
     fn get_color(&self, x: u32, y: u32) -> Color {
         let dim = std::cmp::max(self.width, self.height) as f64;
         let xn = ((2 * x + 1) as f64 - self.width as f64) / dim;
         let yn = ((2 * (self.height - y) - 1) as f64 - self.height as f64) / dim;
-        self.trace_ray(self.camera.cast_ray(xn, yn), 0)
+        let mut rng = rand::thread_rng();
+        let mut color = glm::vec3(0.0, 0.0, 0.0);
+        for _ in 0..self.paths_per_pixel {
+            color += self.trace_ray(self.camera.cast_ray(xn, yn), 0, &mut rng);
+        }
+        color / f64::from(self.paths_per_pixel)
     }
 
-    fn trace_ray(&self, ray: Ray, num_bounces: u32) -> Color {
-        if num_bounces > 0 {
-            todo!();
-        }
+    fn trace_ray<Rng: rand::Rng>(&self, ray: Ray, num_bounces: u32, rng: &mut Rng) -> Color {
         match self.get_closest_hit(ray) {
             None => self.scene.background,
             Some((h, object)) => {
@@ -130,12 +172,15 @@ impl<'a> Renderer<'a> {
                         color += ambient_color.component_mul(&object.material.color);
                     } else {
                         let (intensity, dir_to_light, dist_to_light) = light.illuminate(world_pos);
-                        let closest_hit = self
-                            .get_closest_hit(Ray {
+                        let closest_hit = if num_bounces < std::cmp::max(1, self.max_bounces) {
+                            self.get_closest_hit(Ray {
                                 origin: world_pos,
                                 dir: dir_to_light,
                             })
-                            .map(|(r, _)| r.time);
+                            .map(|(r, _)| r.time)
+                        } else {
+                            None
+                        };
 
                         if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                             // Cook-Torrance BRDF with GGX microfacet distribution
@@ -143,6 +188,29 @@ impl<'a> Renderer<'a> {
                             color += f.component_mul(&intensity) * dir_to_light.dot(&h.normal);
                         }
                     }
+                }
+                if num_bounces < self.max_bounces {
+                    let theta = rng.gen_range(0.0, 2.0 * std::f64::consts::PI);
+                    let z = rng.gen_range(0.0, 1.0);
+                    let xy_length = f64::sqrt(1.0 - z * z);
+                    let x = xy_length * f64::cos(theta);
+                    let y = xy_length * f64::sin(theta);
+                    let mut orthobasis1 = h.normal.cross(&glm::vec3(0.0, 0.0, 1.0));
+                    if glm::length2(&orthobasis1) < EPSILON {
+                        orthobasis1 = h.normal.cross(&glm::vec3(0.0, 1.0, 0.0));
+                    }
+                    orthobasis1 = orthobasis1.normalize();
+                    let orthobasis2 = h.normal.cross(&orthobasis1).normalize();
+                    let dir = x * orthobasis1 + y * orthobasis2 + z * h.normal;
+                    let ray = Ray {
+                        origin: world_pos,
+                        dir: dir,
+                    };
+                    let f = mat.bsdf(&h.normal, &eye, &dir);
+                    color += 2.0
+                        * std::f64::consts::PI
+                        * f.component_mul(&self.trace_ray(ray, num_bounces + 1, rng))
+                        * dir.dot(&h.normal);
                 }
 
                 color

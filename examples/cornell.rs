@@ -51,15 +51,11 @@ fn main() -> color_eyre::Result<()> {
     scene.add(Object::new(large_box).material(white));
     scene.add(Object::new(small_box).material(white));
 
-    // This light is temporary, remove this after adding path tracing
-    scene.add(Light::Point(
-        glm::vec3(1000000.0, 1000000.0, 1000000.0),
-        glm::vec3(278.0, 273.0, -800.0),
-    ));
-
     Renderer::new(&scene, camera)
         .width(1200)
         .height(1200)
+        .max_bounces(2)
+        .paths_per_pixel(1000)
         .render()
         .save("output.png")?;
 
