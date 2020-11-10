@@ -1,7 +1,8 @@
-use image::{ImageBuffer, RgbImage};
+use image::RgbImage;
 use rayon::prelude::*;
 
-use crate::color::{color_bytes, Color};
+use crate::buffer::Buffer;
+use crate::color::Color;
 use crate::light::Light;
 use crate::object::Object;
 use crate::scene::Scene;
@@ -27,7 +28,7 @@ pub struct Renderer<'a> {
     pub max_bounces: u32,
 
     /// Number of random paths traced per pixel
-    pub paths_per_pixel: u32,
+    pub num_samples: u32,
 }
 
 /// A simple perspective camera
@@ -80,7 +81,7 @@ impl<'a> Renderer<'a> {
             width: 800,
             height: 600,
             max_bounces: 0,
-            paths_per_pixel: 1,
+            num_samples: 1,
         }
     }
 
@@ -103,47 +104,43 @@ impl<'a> Renderer<'a> {
     }
 
     /// Set the number of random paths traced per pixel
-    pub fn paths_per_pixel(mut self, paths_per_pixel: u32) -> Self {
-        self.paths_per_pixel = paths_per_pixel;
+    pub fn num_samples(mut self, num_samples: u32) -> Self {
+        self.num_samples = num_samples;
         self
     }
 
     /// Render the scene by path tracing
     pub fn render(&self) -> RgbImage {
-        let buf: Vec<_> = (0..self.height)
+        let mut buffer = Buffer::new(self.width, self.height);
+        for _ in 0..self.num_samples {
+            self.sample_once(&mut buffer);
+        }
+        buffer.image()
+    }
+
+    /// Render the scene iteratively, calling a callback after each sample
+    pub fn iterative_render<F>(&self, mut callback: F)
+    where
+        F: FnMut(u32, RgbImage),
+    {
+        let mut buffer = Buffer::new(self.width, self.height);
+        for iteration in 0..self.num_samples {
+            self.sample_once(&mut buffer);
+            callback(iteration, buffer.image());
+        }
+    }
+
+    fn sample_once(&self, buffer: &mut Buffer) {
+        let colors: Vec<_> = (0..self.height)
             .into_par_iter()
             .flat_map(|y| {
-                let mut buf = Vec::new();
-                for x in 0..self.width {
-                    let [r, g, b] = color_bytes(&self.get_color(x, y));
-                    buf.push(r);
-                    buf.push(g);
-                    buf.push(b);
-                }
-                buf
+                (0..self.width)
+                    .into_iter()
+                    .map(|x| self.get_color(x, y))
+                    .collect::<Vec<_>>()
             })
             .collect();
-        let mut vec = buf.to_vec();
-        const BOX_SIZE: u32 = 1;
-        for i in 0..self.height {
-            for j in 0..self.width {
-                for k in 0..3 {
-                    let mut sum = 0u32;
-                    let mut cnt = 0u32;
-                    for di in 0..BOX_SIZE {
-                        for dj in 0..BOX_SIZE {
-                            if i + di < self.height && j + dj < self.width {
-                                sum += vec[((i + di) * self.width * 3 + (j + dj) * 3 + k) as usize]
-                                    as u32;
-                                cnt += 1;
-                            }
-                        }
-                    }
-                    vec[(i * self.width * 3 + j * 3 + k) as usize] = (sum / cnt) as u8;
-                }
-            }
-        }
-        ImageBuffer::from_raw(self.width, self.height, vec).expect("Image buffer has wrong size")
+        buffer.add_samples(&colors);
     }
 
     fn get_color(&self, x: u32, y: u32) -> Color {
@@ -152,10 +149,10 @@ impl<'a> Renderer<'a> {
         let yn = ((2 * (self.height - y) - 1) as f64 - self.height as f64) / dim;
         let mut rng = rand::thread_rng();
         let mut color = glm::vec3(0.0, 0.0, 0.0);
-        for _ in 0..self.paths_per_pixel {
+        for _ in 0..self.num_samples {
             color += self.trace_ray(self.camera.cast_ray(xn, yn), 0, &mut rng);
         }
-        color / f64::from(self.paths_per_pixel)
+        color / f64::from(self.num_samples)
     }
 
     fn trace_ray<Rng: rand::Rng>(&self, ray: Ray, num_bounces: u32, rng: &mut Rng) -> Color {
@@ -172,15 +169,12 @@ impl<'a> Renderer<'a> {
                         color += ambient_color.component_mul(&object.material.color);
                     } else {
                         let (intensity, dir_to_light, dist_to_light) = light.illuminate(world_pos);
-                        let closest_hit = if num_bounces < std::cmp::max(1, self.max_bounces) {
-                            self.get_closest_hit(Ray {
+                        let closest_hit = self
+                            .get_closest_hit(Ray {
                                 origin: world_pos,
                                 dir: dir_to_light,
                             })
-                            .map(|(r, _)| r.time)
-                        } else {
-                            None
-                        };
+                            .map(|(r, _)| r.time);
 
                         if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                             // Cook-Torrance BRDF with GGX microfacet distribution
@@ -204,11 +198,10 @@ impl<'a> Renderer<'a> {
                     let dir = x * orthobasis1 + y * orthobasis2 + z * h.normal;
                     let ray = Ray {
                         origin: world_pos,
-                        dir: dir,
+                        dir,
                     };
                     let f = mat.bsdf(&h.normal, &eye, &dir);
-                    color += 2.0
-                        * std::f64::consts::PI
+                    color += std::f64::consts::TAU
                         * f.component_mul(&self.trace_ray(ray, num_bounces + 1, rng))
                         * dir.dot(&h.normal);
                 }

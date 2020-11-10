@@ -2,6 +2,8 @@
 //!
 //! Reference: https://www.graphics.cornell.edu/online/box/data.html
 
+use std::time::Instant;
+
 use rpt::*;
 
 fn main() -> color_eyre::Result<()> {
@@ -51,13 +53,20 @@ fn main() -> color_eyre::Result<()> {
     scene.add(Object::new(large_box).material(white));
     scene.add(Object::new(small_box).material(white));
 
+    let mut time = Instant::now();
     Renderer::new(&scene, camera)
         .width(1200)
         .height(1200)
         .max_bounces(2)
-        .paths_per_pixel(1000)
-        .render()
-        .save("output.png")?;
+        .num_samples(10)
+        .iterative_render(|iteration, image| {
+            let millis = time.elapsed().as_millis();
+            println!("Finished iteration {}, took {} ms", iteration, millis);
+            image
+                .save(format!("output_{:03}.png", iteration))
+                .expect("Failed to save image");
+            time = Instant::now();
+        });
 
     Ok(())
 }

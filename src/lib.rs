@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub use buffer::*;
 pub use color::*;
 pub use kdtree::*;
 pub use light::*;
@@ -12,6 +13,7 @@ pub use renderer::*;
 pub use scene::*;
 pub use shape::*;
 
+mod buffer;
 mod color;
 mod kdtree;
 mod light;

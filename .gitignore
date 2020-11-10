@@ -5,4 +5,4 @@ Cargo.lock
 .vscode/
 
 # Rendered image
-output.png
+output*.png
