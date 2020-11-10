@@ -53,6 +53,23 @@ impl Buffer {
             .expect("Image buffer has incorrect size")
     }
 
+    /// Return the average color variance of samples in each pixel
+    pub fn variance(&self) -> f64 {
+        let mut variance = 0.0;
+        let mut count = 0.0;
+        for pix_samples in &self.samples {
+            let mean: Color = pix_samples.iter().sum::<Color>() / (pix_samples.len() as f64);
+            let mut sum_of_squares = 0.0;
+            for sample in pix_samples {
+                sum_of_squares += (sample - mean).magnitude_squared();
+            }
+            // Sample variance: n - 1 degrees of freedom
+            variance += sum_of_squares / (pix_samples.len() as f64 - 1.0);
+            count = count + 1.0;
+        }
+        variance / count
+    }
+
     fn get_filtered_color(&self, x: u32, y: u32) -> Color {
         let mut color = glm::vec3(0.0, 0.0, 0.0);
         let mut count = 0;

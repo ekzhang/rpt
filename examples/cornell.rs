@@ -55,15 +55,21 @@ fn main() -> color_eyre::Result<()> {
 
     let mut time = Instant::now();
     Renderer::new(&scene, camera)
-        .width(1200)
-        .height(1200)
+        .width(1024)
+        .height(1024)
         .max_bounces(2)
-        .num_samples(10)
-        .iterative_render(|iteration, image| {
+        .num_samples(100)
+        .iterative_render(10, |iteration, buffer| {
             let millis = time.elapsed().as_millis();
-            println!("Finished iteration {}, took {} ms", iteration, millis);
-            image
-                .save(format!("output_{:03}.png", iteration))
+            println!(
+                "Finished iteration {}, took {} ms, variance: {}",
+                iteration,
+                millis,
+                buffer.variance()
+            );
+            buffer
+                .image()
+                .save(format!("output_{:03}.png", iteration - 1))
                 .expect("Failed to save image");
             time = Instant::now();
         });

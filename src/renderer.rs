@@ -113,47 +113,48 @@ impl<'a> Renderer<'a> {
     /// Render the scene by path tracing
     pub fn render(&self) -> RgbImage {
         let mut buffer = Buffer::new(self.width, self.height);
-        for _ in 0..self.num_samples {
-            self.sample_once(&mut buffer);
-        }
+        self.sample(self.num_samples, &mut buffer);
         buffer.image()
     }
 
-    /// Render the scene iteratively, calling a callback after each sample
-    pub fn iterative_render<F>(&self, mut callback: F)
+    /// Render the scene iteratively, calling a callback after every k samples
+    pub fn iterative_render<F>(&self, callback_interval: u32, mut callback: F)
     where
-        F: FnMut(u32, RgbImage),
+        F: FnMut(u32, &Buffer),
     {
         let mut buffer = Buffer::new(self.width, self.height);
-        for iteration in 0..self.num_samples {
-            self.sample_once(&mut buffer);
-            callback(iteration, buffer.image());
+        let mut iteration = 0;
+        while iteration < self.num_samples {
+            let steps = std::cmp::min(self.num_samples - iteration, callback_interval);
+            self.sample(steps, &mut buffer);
+            iteration += steps;
+            callback(iteration, &buffer);
         }
     }
 
-    fn sample_once(&self, buffer: &mut Buffer) {
+    fn sample(&self, iterations: u32, buffer: &mut Buffer) {
         let colors: Vec<_> = (0..self.height)
             .into_par_iter()
             .flat_map(|y| {
                 (0..self.width)
                     .into_iter()
-                    .map(|x| self.get_color(x, y))
+                    .map(|x| self.get_color(x, y, iterations))
                     .collect::<Vec<_>>()
             })
             .collect();
         buffer.add_samples(&colors);
     }
 
-    fn get_color(&self, x: u32, y: u32) -> Color {
+    fn get_color(&self, x: u32, y: u32, iterations: u32) -> Color {
         let dim = std::cmp::max(self.width, self.height) as f64;
         let xn = ((2 * x + 1) as f64 - self.width as f64) / dim;
         let yn = ((2 * (self.height - y) - 1) as f64 - self.height as f64) / dim;
         let mut rng = rand::thread_rng();
         let mut color = glm::vec3(0.0, 0.0, 0.0);
-        for _ in 0..self.num_samples {
+        for _ in 0..iterations {
             color += self.trace_ray(self.camera.cast_ray(xn, yn), 0, &mut rng);
         }
-        color / f64::from(self.num_samples)
+        color / f64::from(iterations)
     }
 
     fn trace_ray(&self, ray: Ray, num_bounces: u32, rng: &mut impl Rng) -> Color {
