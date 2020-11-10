@@ -114,7 +114,7 @@ impl<'a> Renderer<'a> {
     pub fn render(&self) -> RgbImage {
         let mut buffer = Buffer::new(self.width, self.height);
         self.sample(self.num_samples, &mut buffer);
-        buffer.image()
+        buffer.image(0)
     }
 
     /// Render the scene iteratively, calling a callback after every k samples

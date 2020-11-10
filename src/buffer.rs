@@ -38,11 +38,11 @@ impl Buffer {
     }
 
     /// Converts the current buffer to an image
-    pub fn image(&self) -> RgbImage {
+    pub fn image(&self, box_radius: u32) -> RgbImage {
         let mut buf = Vec::new();
         for y in 0..self.height {
             for x in 0..self.width {
-                let color = self.get_filtered_color(x, y);
+                let color = self.get_filtered_color(x, y, box_radius);
                 let [r, g, b] = color_bytes(&color);
                 buf.push(r);
                 buf.push(g);
@@ -70,11 +70,11 @@ impl Buffer {
         variance / count
     }
 
-    fn get_filtered_color(&self, x: u32, y: u32) -> Color {
+    fn get_filtered_color(&self, x: u32, y: u32, radius: u32) -> Color {
         let mut color = glm::vec3(0.0, 0.0, 0.0);
         let mut count = 0;
-        for i in x.saturating_sub(1)..=(x + 1) {
-            for j in y.saturating_sub(1)..=(y + 1) {
+        for i in x.saturating_sub(radius)..=(x + radius) {
+            for j in y.saturating_sub(radius)..=(y + radius) {
                 if i < self.width && j < self.height {
                     let index = (j * self.width + i) as usize;
                     color += self.samples[index].iter().sum::<Color>();

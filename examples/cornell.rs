@@ -68,7 +68,7 @@ fn main() -> color_eyre::Result<()> {
                 buffer.variance()
             );
             buffer
-                .image()
+                .image(1)
                 .save(format!("output_{:03}.png", iteration - 1))
                 .expect("Failed to save image");
             time = Instant::now();
