@@ -23,17 +23,42 @@ fn main() -> color_eyre::Result<()> {
     let green = Material::diffuse(hex_color(0x00BC00));
     let light_mtl = Material::light(hex_color(0xFFFEFA), 100.0); // 6500 K
 
-    let floor = plane(glm::vec3(0.0, 1.0, 0.0), 0.0);
-    let ceiling = plane(glm::vec3(0.0, 1.0, 0.0), 548.9);
+    let floor = polygon(&[
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(0.0, 0.0, 559.2),
+        glm::vec3(556.0, 0.0, 559.2),
+        glm::vec3(556.0, 0.0, 0.0),
+    ]);
+    let ceiling = polygon(&[
+        glm::vec3(0.0, 548.9, 0.0),
+        glm::vec3(556.0, 548.9, 0.0),
+        glm::vec3(556.0, 548.9, 559.2),
+        glm::vec3(0.0, 548.9, 559.2),
+    ]);
     let light_rect = polygon(&[
         glm::vec3(343.0, 548.8, 227.0),
         glm::vec3(343.0, 548.8, 332.0),
         glm::vec3(213.0, 548.8, 332.0),
         glm::vec3(213.0, 548.8, 227.0),
     ]);
-    let back_wall = plane(glm::vec3(0.0, 0.0, 1.0), 559.2);
-    let right_wall = plane(glm::vec3(1.0, 0.0, 0.0), 0.0);
-    let left_wall = plane(glm::vec3(1.0, 0.0, 0.0), 556.0);
+    let back_wall = polygon(&[
+        glm::vec3(0.0, 0.0, 559.2),
+        glm::vec3(0.0, 548.9, 559.2),
+        glm::vec3(556.0, 548.9, 559.2),
+        glm::vec3(556.0, 0.0, 559.2),
+    ]);
+    let right_wall = polygon(&[
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(0.0, 548.9, 0.0),
+        glm::vec3(0.0, 548.9, 559.2),
+        glm::vec3(0.0, 0.0, 559.2),
+    ]);
+    let left_wall = polygon(&[
+        glm::vec3(556.0, 0.0, 0.0),
+        glm::vec3(556.0, 0.0, 559.2),
+        glm::vec3(556.0, 548.9, 559.2),
+        glm::vec3(556.0, 548.9, 0.0),
+    ]);
 
     let large_box = cube()
         .scale(&glm::vec3(165.0, 330.0, 165.0))
