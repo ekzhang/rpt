@@ -168,7 +168,7 @@ impl<'a> Renderer<'a> {
                 let wo = -glm::normalize(&ray.dir);
 
                 let mut color = material.emittance * material.color;
-                color += self.sample_lights(&material, &world_pos, &h.normal, &wo);
+                color += self.sample_lights(&material, &world_pos, &h.normal, &wo, rng);
                 if num_bounces < self.max_bounces {
                     let (wi, pdf) = material.sample_f(&h.normal, &wo, rng);
                     let f = material.bsdf(&h.normal, &wo, &wi);
@@ -193,19 +193,26 @@ impl<'a> Renderer<'a> {
         pos: &glm::DVec3,
         n: &glm::DVec3,
         wo: &glm::DVec3,
+        rng: &mut ThreadRng,
     ) -> Color {
         let mut color = glm::vec3(0.0, 0.0, 0.0);
         for light in &self.scene.lights {
             if let Light::Ambient(ambient_color) = light {
                 color += ambient_color.component_mul(&material.color);
             } else {
-                let (intensity, wi, dist_to_light) = light.illuminate(pos);
+                let (intensity, wi, dist_to_light) = light.illuminate(pos, rng);
                 let closest_hit = self
                     .get_closest_hit(Ray {
                         origin: *pos,
                         dir: wi,
                     })
                     .map(|(r, _)| r.time);
+                // println!(
+                //     "illuminating {} {}, {:?}",
+                //     closest_hit.unwrap(),
+                //     dist_to_light,
+                //     intensity
+                // );
                 if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                     let f = material.bsdf(n, wo, &wi);
                     color += f.component_mul(&intensity) * wi.dot(n);

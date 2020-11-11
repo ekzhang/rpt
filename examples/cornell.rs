@@ -49,9 +49,9 @@ fn main() -> color_eyre::Result<()> {
     scene.add(Object::new(back_wall).material(white));
     scene.add(Object::new(left_wall).material(red));
     scene.add(Object::new(right_wall).material(green));
-    scene.add(Object::new(light_rect).material(light_mtl));
     scene.add(Object::new(large_box).material(white));
     scene.add(Object::new(small_box).material(white));
+    scene.add(Light::Object(Object::new(light_rect).material(light_mtl)));
 
     let mut time = Instant::now();
     Renderer::new(&scene, camera)
