@@ -1,3 +1,5 @@
+use rand::rngs::ThreadRng;
+
 use super::{HitRecord, Ray, Shape};
 
 /// A plane given by linear equation: glm::dot(normal, x) == value
@@ -26,5 +28,9 @@ impl Shape for Plane {
         } else {
             false
         }
+    }
+
+    fn sample(&self, _rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        unimplemented!()
     }
 }

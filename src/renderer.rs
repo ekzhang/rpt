@@ -1,10 +1,11 @@
 use image::RgbImage;
-use rand::Rng;
+use rand::rngs::ThreadRng;
 use rayon::prelude::*;
 
 use crate::buffer::Buffer;
 use crate::color::Color;
 use crate::light::Light;
+use crate::material::Material;
 use crate::object::Object;
 use crate::scene::Scene;
 use crate::shape::{HitRecord, Ray};
@@ -157,37 +158,20 @@ impl<'a> Renderer<'a> {
         color / f64::from(iterations)
     }
 
-    fn trace_ray(&self, ray: Ray, num_bounces: u32, rng: &mut impl Rng) -> Color {
+    /// Trace a ray, obtaining a Monte Carlo estimate of the luminance
+    fn trace_ray(&self, ray: Ray, num_bounces: u32, rng: &mut ThreadRng) -> Color {
         match self.get_closest_hit(ray) {
             None => self.scene.background,
             Some((h, object)) => {
                 let world_pos = ray.at(h.time);
-                let mat = object.material;
+                let material = object.material;
                 let wo = -glm::normalize(&ray.dir);
-                let mut color = mat.emittance * mat.color;
 
-                for light in &self.scene.lights {
-                    if let Light::Ambient(ambient_color) = light {
-                        color += ambient_color.component_mul(&object.material.color);
-                    } else {
-                        let (intensity, wi, dist_to_light) = light.illuminate(world_pos);
-                        let closest_hit = self
-                            .get_closest_hit(Ray {
-                                origin: world_pos,
-                                dir: wi,
-                            })
-                            .map(|(r, _)| r.time);
-
-                        if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
-                            // Cook-Torrance BRDF with GGX microfacet distribution
-                            let f = mat.bsdf(&h.normal, &wo, &wi);
-                            color += f.component_mul(&intensity) * wi.dot(&h.normal);
-                        }
-                    }
-                }
+                let mut color = material.emittance * material.color;
+                color += self.sample_lights(&material, &world_pos, &h.normal, &wo);
                 if num_bounces < self.max_bounces {
-                    let (wi, pdf) = mat.sample_f(&h.normal, &wo, rng);
-                    let f = mat.bsdf(&h.normal, &wo, &wi);
+                    let (wi, pdf) = material.sample_f(&h.normal, &wo, rng);
+                    let f = material.bsdf(&h.normal, &wo, &wi);
                     let ray = Ray {
                         origin: world_pos,
                         dir: wi,
@@ -200,6 +184,35 @@ impl<'a> Renderer<'a> {
                 color
             }
         }
+    }
+
+    /// Explicitly sample from all the lights in the scene
+    fn sample_lights(
+        &self,
+        material: &Material,
+        pos: &glm::DVec3,
+        n: &glm::DVec3,
+        wo: &glm::DVec3,
+    ) -> Color {
+        let mut color = glm::vec3(0.0, 0.0, 0.0);
+        for light in &self.scene.lights {
+            if let Light::Ambient(ambient_color) = light {
+                color += ambient_color.component_mul(&material.color);
+            } else {
+                let (intensity, wi, dist_to_light) = light.illuminate(pos);
+                let closest_hit = self
+                    .get_closest_hit(Ray {
+                        origin: *pos,
+                        dir: wi,
+                    })
+                    .map(|(r, _)| r.time);
+                if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
+                    let f = material.bsdf(n, wo, &wi);
+                    color += f.component_mul(&intensity) * wi.dot(n);
+                }
+            }
+        }
+        color
     }
 
     /// Loop through all objects in the scene to find the closest hit.

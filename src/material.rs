@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{rngs::ThreadRng, Rng};
 
 use crate::color::{hex_color, Color};
 
@@ -156,7 +156,7 @@ impl Material {
         &self,
         n: &glm::DVec3,
         _wo: &glm::DVec3,
-        rng: &mut impl Rng,
+        rng: &mut ThreadRng,
     ) -> (glm::DVec3, f64) {
         let mut x = rng.gen_range(-1.0, 1.0);
         let mut y = rng.gen_range(-1.0, 1.0);

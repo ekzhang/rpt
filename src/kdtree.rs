@@ -1,3 +1,4 @@
+use rand::{distributions::Uniform, rngs::ThreadRng, Rng};
 use std::sync::Arc;
 
 use crate::shape::{HitRecord, Ray, Shape};
@@ -130,6 +131,13 @@ impl<T: Bounded> Shape for KdTree<T> {
             return false;
         }
         self.intersect_subtree(&self.root, &self.bounds, ray, t_min, record)
+    }
+
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        let num = self.objects.len();
+        let index = rng.sample(Uniform::from(0..num));
+        let (v, n, p) = self.objects[index].sample(rng);
+        (v, n, p / (num as f64))
     }
 }
 

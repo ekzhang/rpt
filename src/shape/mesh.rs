@@ -1,3 +1,5 @@
+use rand::{rngs::ThreadRng, Rng};
+
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox, KdTree};
 
@@ -76,6 +78,22 @@ impl Shape for Triangle {
         } else {
             false
         }
+    }
+
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        let mut u: f64 = rng.gen();
+        let mut v: f64 = rng.gen();
+        while u + v > 1.0 {
+            u = rng.gen();
+            v = rng.gen();
+        }
+        let w = 1.0 - u - v;
+        let area: f64 = 0.5 * (self.v2 - self.v1).cross(&(self.v3 - self.v1)).magnitude();
+        (
+            u * self.v1 + v * self.v2 + w * self.v3,
+            (u * self.n1 + v * self.n2 + w * self.n3).normalize(),
+            area.recip(),
+        )
     }
 }
 

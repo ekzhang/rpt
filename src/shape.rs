@@ -1,5 +1,5 @@
-// TODO: Constructive solid geometry
 use color_eyre::eyre::{anyhow, bail};
+use rand::rngs::ThreadRng;
 use std::fs::File;
 use std::io::{prelude::*, BufReader, SeekFrom};
 use std::sync::Arc;
@@ -20,17 +20,28 @@ pub trait Shape: Send + Sync {
     /// Intersect the shape with a ray, for `t >= t_min`, returning true and mutating
     /// `h` if an intersection was found before the current closest one
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool;
+
+    /// Sample the shape for a random point on its surface, also returning the normal and PDF
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64);
 }
 
 impl<T: Shape + ?Sized> Shape for Box<T> {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         self.as_ref().intersect(ray, t_min, record)
     }
+
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        self.as_ref().sample(rng)
+    }
 }
 
 impl<T: Shape + ?Sized> Shape for Arc<T> {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         self.as_ref().intersect(ray, t_min, record)
+    }
+
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        self.as_ref().sample(rng)
     }
 }
 
@@ -96,17 +107,21 @@ pub struct Transformed<T> {
     transform: glm::DMat4,
     inverse_transform: glm::DMat4,
     inverse_normals: glm::DMat3,
+    scale: f64,
 }
 
 impl<T> Transformed<T> {
     fn new(shape: T, transform: glm::DMat4) -> Self {
         let inverse_transform = glm::inverse(&transform);
-        let inverse_normals = glm::inverse_transpose(glm::mat4_to_mat3(&transform));
+        let linear = glm::mat4_to_mat3(&transform);
+        let scale = linear.determinant();
+        let inverse_normals = glm::inverse_transpose(linear);
         Self {
             shape,
             transform,
             inverse_transform,
             inverse_normals,
+            scale,
         }
     }
 }
@@ -121,6 +136,15 @@ impl<T: Shape> Shape for Transformed<T> {
         } else {
             false
         }
+    }
+
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        let (v, n, p) = self.shape.sample(rng);
+        (
+            (self.transform * glm::vec4(v.x, v.y, v.z, 1.0)).xyz(),
+            (self.inverse_normals * n).normalize(),
+            p / self.scale, // divide PDF by the determinant
+        )
     }
 }
 

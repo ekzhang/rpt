@@ -1,3 +1,5 @@
+use rand::{distributions::Uniform, rngs::ThreadRng, Rng};
+
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
@@ -66,5 +68,20 @@ impl Shape for Cube {
         } else {
             false
         }
+    }
+
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        let a = rng.gen::<f64>() - 0.5;
+        let b = rng.gen::<f64>() - 0.5;
+        let (v, n) = match rng.sample(Uniform::from(0..6)) {
+            0 => (glm::vec3(a, b, 0.5), glm::vec3(0.0, 0.0, 1.0)),
+            1 => (glm::vec3(a, b, -0.5), glm::vec3(0.0, 0.0, -1.0)),
+            2 => (glm::vec3(a, 0.5, b), glm::vec3(0.0, 1.0, 0.0)),
+            3 => (glm::vec3(a, -0.5, b), glm::vec3(0.0, -1.0, 0.0)),
+            4 => (glm::vec3(0.5, a, b), glm::vec3(1.0, 0.0, 0.0)),
+            5 => (glm::vec3(-0.5, a, b), glm::vec3(-1.0, 0.0, 0.0)),
+            _ => unreachable!(),
+        };
+        (v, n, 1.0 / 6.0)
     }
 }

@@ -1,3 +1,6 @@
+use rand::{rngs::ThreadRng, Rng};
+use rand_distr::UnitSphere;
+
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
@@ -35,6 +38,12 @@ impl Shape for Sphere {
         } else {
             false
         }
+    }
+
+    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        let [x, y, z] = rng.sample(UnitSphere);
+        let p = glm::vec3(x, y, z);
+        (p, p, 0.25 * std::f64::consts::FRAC_1_PI)
     }
 }
 
