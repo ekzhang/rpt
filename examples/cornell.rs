@@ -82,6 +82,7 @@ fn main() -> color_eyre::Result<()> {
     Renderer::new(&scene, camera)
         .width(1024)
         .height(1024)
+        .filter(Filter::Box(1))
         .max_bounces(2)
         .num_samples(100)
         .iterative_render(10, |iteration, buffer| {
@@ -93,7 +94,7 @@ fn main() -> color_eyre::Result<()> {
                 buffer.variance()
             );
             buffer
-                .image(1)
+                .image()
                 .save(format!("output_{:03}.png", iteration - 1))
                 .expect("Failed to save image");
             time = Instant::now();

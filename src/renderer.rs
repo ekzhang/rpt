@@ -2,7 +2,7 @@ use image::RgbImage;
 use rand::rngs::ThreadRng;
 use rayon::prelude::*;
 
-use crate::buffer::Buffer;
+use crate::buffer::{Buffer, Filter};
 use crate::color::Color;
 use crate::light::Light;
 use crate::material::Material;
@@ -25,6 +25,9 @@ pub struct Renderer<'a> {
 
     /// The height of the output image
     pub height: u32,
+
+    /// Optional noise-reduction filter
+    pub filter: Filter,
 
     /// The maximum number of ray bounces
     pub max_bounces: u32,
@@ -82,6 +85,7 @@ impl<'a> Renderer<'a> {
             camera,
             width: 800,
             height: 600,
+            filter: Filter::default(),
             max_bounces: 0,
             num_samples: 1,
         }
@@ -99,6 +103,12 @@ impl<'a> Renderer<'a> {
         self
     }
 
+    /// Set the noise reduction filter
+    pub fn filter(mut self, filter: Filter) -> Self {
+        self.filter = filter;
+        self
+    }
+
     /// Set the maximum number of ray bounces when ray is traced
     pub fn max_bounces(mut self, max_bounces: u32) -> Self {
         self.max_bounces = max_bounces;
@@ -113,9 +123,9 @@ impl<'a> Renderer<'a> {
 
     /// Render the scene by path tracing
     pub fn render(&self) -> RgbImage {
-        let mut buffer = Buffer::new(self.width, self.height);
+        let mut buffer = Buffer::new(self.width, self.height, self.filter);
         self.sample(self.num_samples, &mut buffer);
-        buffer.image(0)
+        buffer.image()
     }
 
     /// Render the scene iteratively, calling a callback after every k samples
@@ -123,7 +133,7 @@ impl<'a> Renderer<'a> {
     where
         F: FnMut(u32, &Buffer),
     {
-        let mut buffer = Buffer::new(self.width, self.height);
+        let mut buffer = Buffer::new(self.width, self.height, self.filter);
         let mut iteration = 0;
         while iteration < self.num_samples {
             let steps = std::cmp::min(self.num_samples - iteration, callback_interval);
