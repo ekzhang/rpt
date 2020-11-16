@@ -1,5 +1,5 @@
 use rand::{rngs::ThreadRng, Rng};
-use rand_distr::UnitCircle;
+use rand_distr::{UnitCircle, UnitDisc};
 
 use crate::color::{hex_color, Color};
 
@@ -135,9 +135,9 @@ impl Material {
 
         // f: fresnel, schlick's approximation
         // F = F0 + (1 - F0)(1 - wi • h)^5
-        let f0 = ((self.index - 1.0) / (self.index + 1.0)).powf(2.0);
+        let f0 = ((self.index - 1.0) / (self.index + 1.0)).powi(2);
         let f0 = glm::lerp(&glm::vec3(f0, f0, f0), &self.color, self.metallic);
-        let f = f0 + (glm::vec3(1.0, 1.0, 1.0) - f0) * (1.0 - wi.dot(&h)).powf(5.0);
+        let f = f0 + (glm::vec3(1.0, 1.0, 1.0) - f0) * (1.0 - wi.dot(&h)).powi(5);
 
         // g: geometry function, microfacet shadowing
         // G = min(1, 2(n • h)(n • wo)/(wo • h), 2(n • h)(n • wi)/(wo • h))
@@ -160,6 +160,10 @@ impl Material {
     /// which creates a probability distribution that can be sampled from using a
     /// probability integral transform.
     ///
+    /// We also need to sample from the diffuse BRDF as well, independently. We
+    /// calculate the ratio of samples from the diffuse vs specular components by
+    /// estimating the average magnitude of the Fresnel term.
+    ///
     /// Reference: https://agraphicsguy.wordpress.com/2015/11/01/sampling-microfacet-brdf/
     pub fn sample_f(
         &self,
@@ -167,24 +171,45 @@ impl Material {
         wo: &glm::DVec3,
         rng: &mut ThreadRng,
     ) -> (glm::DVec3, f64) {
-        // PIT for Beckmann distribution microfacet normal
-        // θ = arctan √(-m^2 ln U)
-        // p = 1 / (πm^2 cos^3 θ) * e^(-tan^2(θ) / m^2)
         let m2 = self.roughness * self.roughness;
-        let theta_h = (m2 * -rng.gen::<f64>().ln()).sqrt().atan();
-        let (sin_t, cos_t) = theta_h.sin_cos();
-        let p_h = (std::f64::consts::PI * m2 * cos_t.powi(3)).recip()
-            * (-(sin_t / cos_t).powi(2) / m2).exp();
 
-        // Generate halfway vector by sampling azimuth uniformly
-        let [x, y]: [f64; 2] = rng.sample(UnitCircle);
-        let h = glm::vec3(x * sin_t, y * sin_t, cos_t);
+        // Estimate specular contribution using Fresnel term
+        let f0 = ((self.index - 1.0) / (self.index + 1.0)).powi(2);
+        let f = (1.0 - self.metallic) * f0 + self.metallic * self.color.mean();
 
-        // Reflect outgoing vector to produce incident vector, and compute PDF
-        let h = local_to_world(n) * h;
-        let wi = -glm::reflect_vec(wo, &h);
-        let p = p_h / (4.0 * h.dot(wo));
-        (wi, p)
+        if rng.gen_bool(f) {
+            // PIT for Beckmann distribution microfacet normal
+            // θ = arctan √(-m^2 ln U)
+            // p = 1 / (πm^2 cos^3 θ) * e^(-tan^2(θ) / m^2)
+            let theta_h = (m2 * -rng.gen::<f64>().ln()).sqrt().atan();
+            let (sin_t, cos_t) = theta_h.sin_cos();
+            let p_h = (std::f64::consts::PI * m2 * cos_t.powi(3)).recip()
+                * (-(sin_t / cos_t).powi(2) / m2).exp();
+
+            // Generate halfway vector by sampling azimuth uniformly
+            let [x, y]: [f64; 2] = rng.sample(UnitCircle);
+            let h = glm::vec3(x * sin_t, y * sin_t, cos_t);
+
+            // Reflect outgoing vector to produce incident vector, and compute PDF
+            let h = local_to_world(n) * h;
+            let wi = -glm::reflect_vec(wo, &h);
+            let p = f * p_h / (4.0 * h.dot(wo))
+                + (1.0 - f) * wi.dot(n).max(0.0) * std::f64::consts::FRAC_1_PI;
+            (wi, p)
+        } else {
+            // Simple cosine-sampling using Malley's method
+            let [x, y]: [f64; 2] = rng.sample(UnitDisc);
+            let z = (1.0_f64 - x * x - y * y).sqrt();
+            let wi = local_to_world(n) * glm::vec3(x, y, z);
+
+            let h = (wi + wo).normalize();
+            let cos_t = h.dot(n);
+            let sin_t = (1.0 - cos_t * cos_t).sqrt();
+            let p_h = (std::f64::consts::PI * m2 * cos_t.powi(3)).recip()
+                * (-(sin_t / cos_t).powi(2) / m2).exp();
+            let p = (1.0 - f) * z * std::f64::consts::FRAC_1_PI + f * p_h / (4.0 * h.dot(wo));
+            (wi, p)
+        }
     }
 }
 
