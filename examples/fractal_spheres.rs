@@ -71,7 +71,7 @@ fn main() -> color_eyre::Result<()> {
     ));
 
     let camera = Camera {
-        center: glm::vec3(2.0, 3.5, 7.0),
+        eye: glm::vec3(2.0, 3.5, 7.0),
         direction: glm::vec3(-0.285714, -0.5, -1.0).normalize(),
         up: glm::vec3(0.0, 1.0, -0.5).normalize(),
         fov: std::f64::consts::FRAC_PI_6,

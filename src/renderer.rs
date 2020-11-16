@@ -11,6 +11,7 @@ use crate::scene::Scene;
 use crate::shape::{HitRecord, Ray};
 
 const EPSILON: f64 = 1e-12;
+const FIREFLY_CLAMP: f64 = 10.0;
 
 /// Builder object for rendering a scene
 pub struct Renderer<'a> {
@@ -37,10 +38,10 @@ pub struct Renderer<'a> {
 }
 
 /// A simple perspective camera
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Camera {
     /// Location of the camera
-    pub center: glm::DVec3,
+    pub eye: glm::DVec3,
 
     /// Direction that the camera is facing
     pub direction: glm::DVec3,
@@ -55,7 +56,7 @@ pub struct Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            center: glm::vec3(0.0, 0.0, 10.0),
+            eye: glm::vec3(0.0, 0.0, 10.0),
             direction: glm::vec3(0.0, 0.0, -1.0),
             up: glm::vec3(0.0, 1.0, 0.0), // we live in a y-up world...
             fov: std::f64::consts::FRAC_PI_6,
@@ -64,6 +65,18 @@ impl Default for Camera {
 }
 
 impl Camera {
+    /// Perspective camera looking at a point, with a given field of view
+    pub fn look_at(eye: glm::DVec3, center: glm::DVec3, up: glm::DVec3, fov: f64) -> Self {
+        let direction = (center - eye).normalize();
+        let up = (up - up.dot(&direction) * direction).normalize();
+        Self {
+            eye,
+            direction,
+            up,
+            fov,
+        }
+    }
+
     /// Cast a ray, where (x, y) are normalized to the standard [-1, 1] box
     pub fn cast_ray(&self, x: f64, y: f64) -> Ray {
         // cot(f / 2) = depth / radius
@@ -71,7 +84,7 @@ impl Camera {
         let right = glm::cross(&self.direction, &self.up).normalize();
         let new_dir = d * self.direction + x * right + y * self.up;
         Ray {
-            origin: self.center,
+            origin: self.eye,
             dir: new_dir.normalize(),
         }
     }
@@ -186,9 +199,12 @@ impl<'a> Renderer<'a> {
                         origin: world_pos,
                         dir: wi,
                     };
-                    color += 1.0 / pdf
+                    let indirect = 1.0 / pdf
                         * f.component_mul(&self.trace_ray(ray, num_bounces + 1, rng))
                         * wi.dot(&h.normal);
+                    color.x += indirect.x.min(FIREFLY_CLAMP);
+                    color.y += indirect.y.min(FIREFLY_CLAMP);
+                    color.z += indirect.z.min(FIREFLY_CLAMP);
                 }
 
                 color
@@ -217,12 +233,6 @@ impl<'a> Renderer<'a> {
                         dir: wi,
                     })
                     .map(|(r, _)| r.time);
-                // println!(
-                //     "illuminating {} {}, {:?}",
-                //     closest_hit.unwrap(),
-                //     dist_to_light,
-                //     intensity
-                // );
                 if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
                     let f = material.bsdf(n, wo, &wi);
                     color += f.component_mul(&intensity) * wi.dot(n);

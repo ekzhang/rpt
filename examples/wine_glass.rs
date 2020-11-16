@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use rpt::*;
 
 fn main() -> color_eyre::Result<()> {
@@ -8,30 +10,74 @@ fn main() -> color_eyre::Result<()> {
     scene.add(
         Object::new(
             load_obj("examples/wine_glass.obj")?
-                .scale(&glm::vec3(0.3, 0.3, 0.3))
-                .translate(&glm::vec3(0.0, -1.0, 0.0)),
+                .scale(&glm::vec3(0.2, 0.2, 0.2))
+                .translate(&glm::vec3(0.0, -1.12, 0.0)),
         )
-            .material(Material::metallic(hex_color(0xffffff), 0.05)),
+        .material(Material::metallic(hex_color(0xffffff), 0.01)),
     );
     scene.add(
         Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -1.0))
             .material(Material::diffuse(hex_color(0xaaaaaa))),
     );
+    scene.add(
+        Object::new(plane(glm::vec3(0.0, 1.0, 0.0), 1.0))
+            .material(Material::diffuse(hex_color(0xaaaaaa))),
+    );
+    scene.add(
+        Object::new(plane(glm::vec3(0.0, 0.0, 1.0), -1.0))
+            .material(Material::diffuse(hex_color(0xaaaaaa))),
+    );
+    scene.add(
+        Object::new(plane(glm::vec3(0.0, 0.0, 1.0), 3.0))
+            .material(Material::diffuse(hex_color(0xaaaaaa))),
+    );
+    scene.add(
+        Object::new(plane(glm::vec3(1.0, 0.0, 0.0), -1.0))
+            .material(Material::diffuse(hex_color(0xff0000))),
+    );
+    scene.add(
+        Object::new(plane(glm::vec3(1.0, 0.0, 0.0), 1.0))
+            .material(Material::diffuse(hex_color(0x00ff00))),
+    );
 
-    scene.add(Light::Ambient(glm::vec3(0.02, 0.02, 0.02)));
-    scene.add(Light::Point(
-        glm::vec3(60.0, 60.0, 60.0),
-        glm::vec3(0.0, 5.0, 5.0),
+    scene.add(Light::Object(
+        Object::new(polygon(&[
+            glm::vec3(-0.25, 0.99, -0.25),
+            glm::vec3(0.25, 0.99, -0.25),
+            glm::vec3(0.25, 0.99, 0.25),
+            glm::vec3(-0.25, 0.99, 0.25),
+        ]))
+        .material(Material::light(hex_color(0xFFFEFA), 40.0)),
     ));
 
-    // black background
-    scene.background = hex_color(0x000000);
+    let camera = Camera::look_at(
+        glm::vec3(0.0, 0.0, 2.95),
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(0.0, 1.0, 0.0),
+        glm::quarter_pi(),
+    );
 
-    Renderer::new(&scene, Camera::default())
+    let mut time = Instant::now();
+    Renderer::new(&scene, camera)
         .width(800)
         .height(800)
-        .render()
-        .save("output.png")?;
+        .max_bounces(3)
+        .num_samples(100)
+        .filter(Filter::Box(1))
+        .iterative_render(10, |iteration, buffer| {
+            let millis = time.elapsed().as_millis();
+            println!(
+                "Finished iteration {}, took {} ms, variance: {}",
+                iteration,
+                millis,
+                buffer.variance()
+            );
+            buffer
+                .image()
+                .save(format!("output_{:03}.png", iteration - 1))
+                .expect("Failed to save image");
+            time = Instant::now();
+        });
 
     Ok(())
 }

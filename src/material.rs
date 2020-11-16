@@ -1,4 +1,5 @@
 use rand::{rngs::ThreadRng, Rng};
+use rand_distr::UnitCircle;
 
 use crate::color::{hex_color, Color};
 
@@ -12,7 +13,7 @@ pub struct Material {
     /// Index of refraction
     pub index: f64,
 
-    /// Roughness parameter for GGX microfacet distribution
+    /// Roughness parameter for Beckmann microfacet distribution
     pub roughness: f64,
 
     /// Metallic versus dielectric
@@ -120,8 +121,12 @@ impl Material {
     /// - https://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf
     /// - http://www.pbr-book.org/3ed-2018/Materials/BSDFs.html
     pub fn bsdf(&self, n: &glm::DVec3, wo: &glm::DVec3, wi: &glm::DVec3) -> Color {
+        if n.dot(wi) < 0.0 || n.dot(wo) < 0.0 {
+            // We don't handle transmittence, yet
+            return glm::vec3(0.0, 0.0, 0.0);
+        }
         let h = (wi + wo).normalize(); // halfway vector
-        let nh2 = h.dot(n).powf(2.0);
+        let nh2 = h.dot(n).powi(2);
 
         // d: microfacet distribution function
         // D = exp(((n • h)^2 - 1) / (m^2 (n • h)^2)) / (π m^2 (n • h)^4)
@@ -148,27 +153,38 @@ impl Material {
         specular + diffuse
     }
 
-    /// Sample the z >= 0 hemisphere, returning a tuple of direction vector and PDF
+    /// Sample the light hemisphere, returning a tuple of (direction vector, PDF)
     ///
-    /// This implementation does a simple cosine-sampling using Malley's method.
-    /// http://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations.html
+    /// This implementation samples according to the Beckmann distribution
+    /// function D. Specifically, it uses the fact that ∫ D(h) (n • h) dω = 1,
+    /// which creates a probability distribution that can be sampled from using a
+    /// probability integral transform.
+    ///
+    /// Reference: https://agraphicsguy.wordpress.com/2015/11/01/sampling-microfacet-brdf/
     pub fn sample_f(
         &self,
         n: &glm::DVec3,
-        _wo: &glm::DVec3,
+        wo: &glm::DVec3,
         rng: &mut ThreadRng,
     ) -> (glm::DVec3, f64) {
-        let mut x = rng.gen_range(-1.0, 1.0);
-        let mut y = rng.gen_range(-1.0, 1.0);
-        while x * x + y * y > 1.0 {
-            x = rng.gen_range(-1.0, 1.0);
-            y = rng.gen_range(-1.0, 1.0);
-        }
-        let z = (1.0_f64 - x * x - y * y).sqrt();
-        (
-            local_to_world(n) * glm::vec3(x, y, z),
-            z * std::f64::consts::FRAC_1_PI,
-        )
+        // PIT for Beckmann distribution microfacet normal
+        // θ = arctan √(-m^2 ln U)
+        // p = 1 / (πm^2 cos^3 θ) * e^(-tan^2(θ) / m^2)
+        let m2 = self.roughness * self.roughness;
+        let theta_h = (m2 * -rng.gen::<f64>().ln()).sqrt().atan();
+        let (sin_t, cos_t) = theta_h.sin_cos();
+        let p_h = (std::f64::consts::PI * m2 * cos_t.powi(3)).recip()
+            * (-(sin_t / cos_t).powi(2) / m2).exp();
+
+        // Generate halfway vector by sampling azimuth uniformly
+        let [x, y]: [f64; 2] = rng.sample(UnitCircle);
+        let h = glm::vec3(x * sin_t, y * sin_t, cos_t);
+
+        // Reflect outgoing vector to produce incident vector, and compute PDF
+        let h = local_to_world(n) * h;
+        let wi = -glm::reflect_vec(wo, &h);
+        let p = p_h / (4.0 * h.dot(wo));
+        (wi, p)
     }
 }
 

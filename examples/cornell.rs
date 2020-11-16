@@ -12,7 +12,7 @@ fn main() -> color_eyre::Result<()> {
     let mut scene = Scene::new();
 
     let camera = Camera {
-        center: glm::vec3(278.0, 273.0, -800.0),
+        eye: glm::vec3(278.0, 273.0, -800.0),
         direction: glm::vec3(0.0, 0.0, 1.0),
         up: glm::vec3(0.0, 1.0, 0.0),
         fov: 0.686,
