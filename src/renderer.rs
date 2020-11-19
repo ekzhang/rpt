@@ -1,5 +1,5 @@
 use image::RgbImage;
-use rand::rngs::ThreadRng;
+use rand::{rngs::ThreadRng, Rng};
 use rayon::prelude::*;
 
 use crate::buffer::{Buffer, Filter};
@@ -176,7 +176,9 @@ impl<'a> Renderer<'a> {
         let mut rng = rand::thread_rng();
         let mut color = glm::vec3(0.0, 0.0, 0.0);
         for _ in 0..iterations {
-            color += self.trace_ray(self.camera.cast_ray(xn, yn), 0, &mut rng);
+            let dx = rng.gen_range(-1.0 / dim, 1.0 / dim);
+            let dy = rng.gen_range(-1.0 / dim, 1.0 / dim);
+            color += self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy), 0, &mut rng);
         }
         color / f64::from(iterations)
     }
