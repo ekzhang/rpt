@@ -5,7 +5,6 @@ authors = ["Eric Zhang <ekzhang1@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-color-eyre = "0.5.6"
 glm = { version = "0.8.0", package = "nalgebra-glm" }
 image = "0.23.10"
 rand = "0.7.3"
@@ -13,6 +12,7 @@ rand_distr = "0.3.0"
 rayon = "1.5.0"
 
 [dev-dependencies]
+color-eyre = "0.5.6"
 ureq = "1.5.2"
 
 [profile.dev]

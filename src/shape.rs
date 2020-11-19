@@ -1,7 +1,7 @@
-use color_eyre::eyre::{anyhow, bail};
 use rand::rngs::ThreadRng;
+use std::error::Error;
 use std::fs::File;
-use std::io::{prelude::*, BufReader, SeekFrom};
+use std::io::{self, prelude::*, BufReader, SeekFrom};
 use std::sync::Arc;
 
 use crate::kdtree::{Bounded, BoundingBox};
@@ -296,6 +296,15 @@ pub fn cube() -> Cube {
     Cube
 }
 
+/// Simple polygon made from triangles
+pub fn polygon(verts: &[glm::DVec3]) -> Mesh {
+    let mut tris = Vec::new();
+    for i in 1..(verts.len() - 1) {
+        tris.push(Triangle::from_vertices(verts[0], verts[i], verts[i + 1]));
+    }
+    Mesh::new(tris)
+}
+
 fn parse_index(value: &str) -> Option<usize> {
     value.parse::<i32>().ok().and_then(|index| {
         if index > 0 {
@@ -306,19 +315,14 @@ fn parse_index(value: &str) -> Option<usize> {
     })
 }
 
-/// Simple polygon made from triangles
-pub fn polygon(verts: &[glm::DVec3]) -> Mesh {
-    let mut tris = Vec::new();
-    for i in 1..(verts.len() - 1) {
-        tris.push(Triangle::from_vertices(verts[0], verts[i], verts[i + 1]));
-    }
-    Mesh::new(tris)
+fn invalid_data(message: impl Into<Box<dyn Error + Send + Sync>>) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
 /// Helper function to load a mesh from a Wavefront .OBJ file
 ///
 /// See https://www.cs.cmu.edu/~mbz/personal/graphics/obj.html for details.
-pub fn load_obj(path: &str) -> color_eyre::Result<Mesh> {
+pub fn load_obj(path: &str) -> io::Result<Mesh> {
     // TODO: no texture or material support yet
     let mut vertices: Vec<glm::DVec3> = Vec::new();
     let mut normals: Vec<glm::DVec3> = Vec::new();
@@ -371,9 +375,9 @@ pub fn load_obj(path: &str) -> color_eyre::Result<Mesh> {
                     let a = 0;
                     let b = i;
                     let c = i + 1;
-                    let v1 = vertices[vi[a].ok_or(anyhow!("Invalid vertex index"))?];
-                    let v2 = vertices[vi[b].ok_or(anyhow!("Invalid vertex index"))?];
-                    let v3 = vertices[vi[c].ok_or(anyhow!("Invalid vertex index"))?];
+                    let v1 = vertices[vi[a].ok_or(invalid_data("Invalid vertex index"))?];
+                    let v2 = vertices[vi[b].ok_or(invalid_data("Invalid vertex index"))?];
+                    let v3 = vertices[vi[c].ok_or(invalid_data("Invalid vertex index"))?];
                     if vni[a].is_none() || vni[b].is_none() || vni[c].is_none() {
                         triangles.push(Triangle::from_vertices(v1, v2, v3));
                     } else {
@@ -408,10 +412,13 @@ pub fn load_obj(path: &str) -> color_eyre::Result<Mesh> {
 ///
 /// See https://en.wikipedia.org/wiki/STL_%28file_format%29 and
 /// https://stackoverflow.com/a/26171886 for details.
-pub fn load_stl(path: &str) -> color_eyre::Result<Mesh> {
+pub fn load_stl(path: &str) -> io::Result<Mesh> {
     let size = std::fs::metadata(path)?.len();
     if size < 15 {
-        bail!("Opened .STL file {} is too short", path);
+        return Err(invalid_data(format!(
+            "Opened .STL file {} is too short",
+            path
+        )));
     }
     let mut file = File::open(path)?;
     if size >= 84 {
@@ -432,11 +439,14 @@ pub fn load_stl(path: &str) -> color_eyre::Result<Mesh> {
         // ASCII STL format
         load_stl_ascii(file)
     } else {
-        bail!("Opened .STL file {}, but could not determine format", path);
+        Err(invalid_data(format!(
+            "Opened .STL file {}, but could not determine format",
+            path
+        )))
     }
 }
 
-fn load_stl_ascii(file: File) -> color_eyre::Result<Mesh> {
+fn load_stl_ascii(file: File) -> io::Result<Mesh> {
     let reader = BufReader::new(file);
     let mut lines = reader.lines().skip(1);
     let mut triangles = Vec::new();
@@ -444,7 +454,7 @@ fn load_stl_ascii(file: File) -> color_eyre::Result<Mesh> {
         let vn: Vec<_> = line?
             .trim()
             .strip_prefix("facet normal ")
-            .ok_or(anyhow!("Malformed STL file: expected `facet normal`"))?
+            .ok_or(invalid_data("Malformed STL file: expected `facet normal`"))?
             .split_ascii_whitespace()
             .map(|token| token.parse::<f64>().expect("Invalid facet normal"))
             .collect();
@@ -457,7 +467,7 @@ fn load_stl_ascii(file: File) -> color_eyre::Result<Mesh> {
                 .unwrap()?
                 .trim()
                 .strip_prefix("vertex ")
-                .ok_or(anyhow!("Malformed STL file: expected `vertex`"))?
+                .ok_or(invalid_data("Malformed STL file: expected `vertex`"))?
                 .split_ascii_whitespace()
                 .map(|token| token.parse::<f64>().expect("Invalid vertex"))
                 .collect();
@@ -478,10 +488,10 @@ fn load_stl_ascii(file: File) -> color_eyre::Result<Mesh> {
     Ok(Mesh::new(triangles))
 }
 
-fn load_stl_binary(file: File, num_triangles: u64) -> color_eyre::Result<Mesh> {
+fn load_stl_binary(file: File, num_triangles: u64) -> io::Result<Mesh> {
     let mut reader = BufReader::new(file);
     let mut triangles = Vec::new();
-    let read_vec3 = |reader: &mut BufReader<File>| -> color_eyre::Result<glm::DVec3> {
+    let read_vec3 = |reader: &mut BufReader<File>| -> io::Result<glm::DVec3> {
         let mut buf: [u8; 4] = Default::default();
         reader.read_exact(&mut buf)?;
         let v1 = f32::from_le_bytes(buf) as f64;
