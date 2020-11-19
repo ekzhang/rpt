@@ -31,12 +31,20 @@ fn main() -> color_eyre::Result<()> {
 
     let mut scene = Scene::new();
     scene.environment = Environment::Hdri(hdri);
-    scene.add(Object::new(sphere()).material(Material::metallic(hex_color(0xffffff), 0.0001)));
+    scene.add(
+        Object::new(sphere().translate(&glm::vec3(1.1, 0.0, 0.0)))
+            .material(Material::metallic(hex_color(0xffffff), 0.0001)),
+    );
+    scene.add(
+        Object::new(sphere().translate(&glm::vec3(-1.1, 0.0, 0.0)))
+            .material(Material::metallic(hex_color(0xffffff), 0.1)),
+    );
 
     Renderer::new(&scene, Camera::default())
-        .width(1600)
-        .height(1200)
-        .max_bounces(1)
+        .width(1200)
+        .height(900)
+        .max_bounces(5)
+        .num_samples(50)
         .render()
         .save("output.png")?;
 
