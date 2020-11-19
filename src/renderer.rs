@@ -184,7 +184,7 @@ impl<'a> Renderer<'a> {
     /// Trace a ray, obtaining a Monte Carlo estimate of the luminance
     fn trace_ray(&self, ray: Ray, num_bounces: u32, rng: &mut ThreadRng) -> Color {
         match self.get_closest_hit(ray) {
-            None => self.scene.background,
+            None => self.scene.environment.get_color(&ray.dir),
             Some((h, object)) => {
                 let world_pos = ray.at(h.time);
                 let material = object.material;

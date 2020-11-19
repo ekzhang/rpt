@@ -1,4 +1,4 @@
-use crate::color::Color;
+use crate::environment::Environment;
 use crate::light::Light;
 use crate::object::Object;
 
@@ -11,8 +11,8 @@ pub struct Scene {
     /// Collection of lights in the scene
     pub lights: Vec<Light>,
 
-    /// The color used for background pixels
-    pub background: Color,
+    /// Environment map used for scene lighting
+    pub environment: Environment,
 }
 
 impl Scene {

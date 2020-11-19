@@ -57,9 +57,6 @@ fn main() -> color_eyre::Result<()> {
             .material(Material::diffuse(hex_color(0xffcccc))),
     );
 
-    // black background
-    scene.background = hex_color(0x000000);
-
     scene.add(Light::Ambient(glm::vec3(0.02, 0.02, 0.02)));
     scene.add(Light::Directional(
         glm::vec3(0.6, 0.6, 0.6),

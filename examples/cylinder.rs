@@ -26,9 +26,6 @@ fn main() -> color_eyre::Result<()> {
         glm::vec3(1.0, -1.0, 0.0).normalize(),
     ));
 
-    // black background
-    scene.background = hex_color(0x000000);
-
     Renderer::new(&scene, Camera::default())
         .width(512)
         .height(512)
