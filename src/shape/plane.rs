@@ -2,7 +2,7 @@ use rand::rngs::ThreadRng;
 
 use super::{HitRecord, Ray, Shape};
 
-/// A plane given by linear equation: glm::dot(normal, x) == value
+/// A plane represented by the linear equation x • normal = value
 pub struct Plane {
     /// The normal vector
     pub normal: glm::DVec3,

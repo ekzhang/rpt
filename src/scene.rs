@@ -22,7 +22,7 @@ impl Scene {
     }
 }
 
-/// Trait that allows adding an object or light to a scene.
+/// Trait that allows adding an object or light to a scene
 pub trait SceneAdd<T> {
     /// Add an object or light to the scene
     fn add(&mut self, node: T);

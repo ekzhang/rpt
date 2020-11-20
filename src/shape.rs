@@ -99,9 +99,7 @@ impl HitRecord {
     }
 }
 
-/// A shape that has been composed with a transformation. This struct allows a new
-/// bounding box to be computed automatically, which is useful for kd-tree
-/// acceleration. It might not be optimal in the case of rotations though.
+/// A shape that has been composed with a transformation
 pub struct Transformed<T> {
     shape: T,
     transform: glm::DMat4,
@@ -296,7 +294,7 @@ pub fn cube() -> Cube {
     Cube
 }
 
-/// Simple polygon made from triangles
+/// Helper function to construct a simple polygon made from triangles
 pub fn polygon(verts: &[glm::DVec3]) -> Mesh {
     let mut tris = Vec::new();
     for i in 1..(verts.len() - 1) {

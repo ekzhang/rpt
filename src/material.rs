@@ -5,7 +5,6 @@ use crate::color::{hex_color, Color};
 
 /// Represents a shader material with some physical properties
 #[derive(Copy, Clone)]
-/// This material shader is adapted from [https://github.com/fogleman/pt/].
 pub struct Material {
     /// Albedo color
     pub color: Color,

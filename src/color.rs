@@ -3,8 +3,10 @@ pub type Color = glm::DVec3;
 
 const SRGB_GAMMA: f64 = 2.2;
 
-/// Construct a new color from an sRGB hex string, such as `hex_color(0xab23f0)`,
-/// applying gamma correction to return the approximate intensities.
+/// Construct a new color from an sRGB hex integer, applying gamma correction to
+/// return linear intensities
+///
+/// Example of use: `hex_color(0xFFFFFF)` for white, or `hex_color(0xAB23F0)` for purple.
 pub fn hex_color(x: u32) -> Color {
     let r = ((x >> 16) & 0xff) as f64 / 255.0;
     let g = ((x >> 8) & 0xff) as f64 / 255.0;
@@ -12,7 +14,7 @@ pub fn hex_color(x: u32) -> Color {
     glm::vec3(r.powf(SRGB_GAMMA), g.powf(SRGB_GAMMA), b.powf(SRGB_GAMMA))
 }
 
-/// Convert a color to a clamped triple of unsigned bytes
+/// Convert a color to a clamped triple of sRGB unsigned bytes
 pub fn color_bytes(color: &Color) -> [u8; 3] {
     [
         (color.x.max(0.0).min(1.0).powf(1.0 / SRGB_GAMMA) * 255.0) as u8,

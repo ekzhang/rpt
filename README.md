@@ -14,6 +14,12 @@ To run tests, use:
 cargo test
 ```
 
+To generate documentation, use:
+
+```bash
+cargo doc --open
+```
+
 ## References
 
 - https://github.com/fogleman/pt

@@ -86,15 +86,16 @@ impl BoundingBox {
     }
 }
 
-/// A kd-tree based on bounding boxes, to accelerate ray intersections
+/// A kd-tree based on bounding boxes, used to accelerate ray intersections
 ///
 /// This is a simple implementation; we don't care about slight performance
 /// optimizations from things like cache locality and packing structs into 8 bytes
 /// (such as what's given in the PBRT book).
 ///
 /// The tree construction & ray intersection code was largely adapted from
-/// [https://github.com/fogleman/pt/blob/master/pt/tree.go]. Parts of the
-/// construction algorithm were also taken from PBRT.
+/// [fogleman/pt](https://github.com/fogleman/pt/blob/master/pt/tree.go).
+/// Parts of the construction algorithm were also taken from PBRT, which helped
+/// optimize the code by a few orders of magnitude.
 pub struct KdTree<T> {
     root: Box<KdNode>,
     objects: Vec<T>,
