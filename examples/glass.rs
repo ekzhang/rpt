@@ -1,4 +1,4 @@
-//! Demo of using a custom HDRI to light a scene
+//! Demo of metal and glass balls, using a custom HDRI to light the scene
 
 use image::{
     codecs::hdr::{HdrDecoder, HdrMetadata},
@@ -37,14 +37,14 @@ fn main() -> color_eyre::Result<()> {
     );
     scene.add(
         Object::new(sphere().translate(&glm::vec3(-1.1, 0.0, 0.0)))
-            .material(Material::metallic(hex_color(0xffffff), 0.1)),
+            .material(Material::clear(1.5, 0.0001)),
     );
 
     Renderer::new(&scene, Camera::default())
         .width(1200)
         .height(900)
         .max_bounces(5)
-        .num_samples(50)
+        .num_samples(200)
         .render()
         .save("output.png")?;
 

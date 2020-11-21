@@ -13,7 +13,7 @@ fn main() -> color_eyre::Result<()> {
                 .scale(&glm::vec3(0.2, 0.2, 0.2))
                 .translate(&glm::vec3(0.0, -1.12, 0.0)),
         )
-        .material(Material::metallic(hex_color(0xffffff), 0.01)),
+        .material(Material::clear(1.5, 0.01)),
     );
     scene.add(
         Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -1.0))
@@ -61,7 +61,7 @@ fn main() -> color_eyre::Result<()> {
     Renderer::new(&scene, camera)
         .width(800)
         .height(800)
-        .max_bounces(3)
+        .max_bounces(6)
         .num_samples(100)
         .filter(Filter::Box(1))
         .iterative_render(10, |iteration, buffer| {

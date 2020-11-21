@@ -195,18 +195,19 @@ impl<'a> Renderer<'a> {
                 let mut color = material.emittance * material.color;
                 color += self.sample_lights(&material, &world_pos, &h.normal, &wo, rng);
                 if num_bounces < self.max_bounces {
-                    let (wi, pdf) = material.sample_f(&h.normal, &wo, rng);
-                    let f = material.bsdf(&h.normal, &wo, &wi);
-                    let ray = Ray {
-                        origin: world_pos,
-                        dir: wi,
-                    };
-                    let indirect = 1.0 / pdf
-                        * f.component_mul(&self.trace_ray(ray, num_bounces + 1, rng))
-                        * wi.dot(&h.normal);
-                    color.x += indirect.x.min(FIREFLY_CLAMP);
-                    color.y += indirect.y.min(FIREFLY_CLAMP);
-                    color.z += indirect.z.min(FIREFLY_CLAMP);
+                    if let Some((wi, pdf)) = material.sample_f(&h.normal, &wo, rng) {
+                        let f = material.bsdf(&h.normal, &wo, &wi);
+                        let ray = Ray {
+                            origin: world_pos,
+                            dir: wi,
+                        };
+                        let indirect = 1.0 / pdf
+                            * f.component_mul(&self.trace_ray(ray, num_bounces + 1, rng))
+                            * wi.dot(&h.normal).abs();
+                        color.x += indirect.x.min(FIREFLY_CLAMP);
+                        color.y += indirect.y.min(FIREFLY_CLAMP);
+                        color.z += indirect.z.min(FIREFLY_CLAMP);
+                    }
                 }
 
                 color
