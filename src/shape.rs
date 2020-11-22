@@ -103,8 +103,9 @@ impl HitRecord {
 pub struct Transformed<T> {
     shape: T,
     transform: glm::DMat4,
+    linear: glm::DMat3,
     inverse_transform: glm::DMat4,
-    inverse_normals: glm::DMat3,
+    normal_transform: glm::DMat3,
     scale: f64,
 }
 
@@ -113,12 +114,13 @@ impl<T> Transformed<T> {
         let inverse_transform = glm::inverse(&transform);
         let linear = glm::mat4_to_mat3(&transform);
         let scale = linear.determinant();
-        let inverse_normals = glm::inverse_transpose(linear);
+        let normal_transform = glm::inverse_transpose(linear);
         Self {
             shape,
             transform,
+            linear,
             inverse_transform,
-            inverse_normals,
+            normal_transform,
             scale,
         }
     }
@@ -129,7 +131,7 @@ impl<T: Shape> Shape for Transformed<T> {
         let local_ray = ray.apply_transform(&self.inverse_transform);
         if self.shape.intersect(&local_ray, t_min, record) {
             // Fix normal vectors by multiplying by M^-T
-            record.normal = (self.inverse_normals * record.normal).normalize();
+            record.normal = (self.normal_transform * record.normal).normalize();
             true
         } else {
             false
@@ -138,10 +140,13 @@ impl<T: Shape> Shape for Transformed<T> {
 
     fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
         let (v, n, p) = self.shape.sample(rng);
+        let new_normal = (self.normal_transform * n).normalize();
+        let parallelepiped_height = (self.linear * n).dot(&new_normal);
+        let parallelepiped_base = self.scale / parallelepiped_height;
         (
             (self.transform * glm::vec4(v.x, v.y, v.z, 1.0)).xyz(),
-            (self.inverse_normals * n).normalize(),
-            p / self.scale, // divide PDF by the determinant
+            new_normal,
+            p / parallelepiped_base, // divide PDF by the area scale factor
         )
     }
 }

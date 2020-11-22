@@ -11,7 +11,7 @@ use crate::scene::Scene;
 use crate::shape::{HitRecord, Ray};
 
 const EPSILON: f64 = 1e-12;
-const FIREFLY_CLAMP: f64 = 10.0;
+const FIREFLY_CLAMP: f64 = 100.0;
 
 /// Builder object for rendering a scene
 pub struct Renderer<'a> {
