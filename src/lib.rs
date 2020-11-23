@@ -13,6 +13,7 @@ pub use object::*;
 pub use renderer::*;
 pub use scene::*;
 pub use shape::*;
+pub use odt::*;
 
 mod buffer;
 mod color;
@@ -24,3 +25,4 @@ mod object;
 mod renderer;
 mod scene;
 mod shape;
+mod odt;
