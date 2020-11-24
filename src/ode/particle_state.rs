@@ -1,6 +1,7 @@
 use std::ops;
 
 /// Represents current state of a particle system. Includes only positions and velocities currently.
+#[derive(Clone, Debug)]
 pub struct ParticleState {
     /// Position vectors
     pub pos: Vec<glm::DVec3>,
@@ -8,95 +9,47 @@ pub struct ParticleState {
     pub vel: Vec<glm::DVec3>,
 }
 
-impl ParticleState {}
+fn add_slices(a: &[glm::DVec3], b: &[glm::DVec3]) -> Vec<glm::DVec3> {
+    <_>::zip(a.iter(), b.iter()).map(|(x, y)| x + y).collect()
+}
 
-impl Clone for ParticleState {
-    fn clone(&self) -> Self {
-        ParticleState {
-            pos: self.pos.clone(),
-            vel: self.vel.clone(),
+macro_rules! impl_add {
+    ($rhs:ty, $fortype:ty) => {
+        impl ops::Add<$rhs> for $fortype {
+            type Output = ParticleState;
+
+            fn add(self, rhs: $rhs) -> ParticleState {
+                return ParticleState {
+                    pos: add_slices(&self.pos, &rhs.pos),
+                    vel: add_slices(&self.vel, &rhs.vel),
+                };
+            }
+        }
+    };
+}
+
+impl_add!(ParticleState, ParticleState);
+impl_add!(&ParticleState, ParticleState);
+impl_add!(ParticleState, &ParticleState);
+impl_add!(&ParticleState, &ParticleState);
+
+macro_rules! impl_scalar_arithmetic {
+    ($trait:tt, $fortype:ty, $fn:ident, $op:tt) => {
+        impl ops::$trait<f64> for $fortype {
+            type Output = ParticleState;
+
+            fn $fn(self, rhs: f64) -> ParticleState {
+                ParticleState {
+                    pos: self.pos.iter().map(|x| x $op rhs).collect(),
+                    vel: self.pos.iter().map(|x| x $op rhs).collect(),
+                }
+            }
         }
     }
 }
 
-impl ops::Add<ParticleState> for ParticleState {
-    type Output = ParticleState;
+impl_scalar_arithmetic!(Mul, ParticleState, mul, *);
+impl_scalar_arithmetic!(Mul, &ParticleState, mul, *);
 
-    fn add(self, rhs: ParticleState) -> ParticleState {
-        return ParticleState {
-            pos: self
-                .pos
-                .iter()
-                .zip(rhs.pos.iter())
-                .map(|(x, y)| x + y)
-                .collect(),
-            vel: self
-                .vel
-                .iter()
-                .zip(rhs.vel.iter())
-                .map(|(x, y)| x + y)
-                .collect(),
-        };
-    }
-}
-
-impl ops::Mul<f64> for ParticleState {
-    type Output = ParticleState;
-    fn mul(self, rhs: f64) -> ParticleState {
-        return ParticleState {
-            pos: self.pos.iter().map(|x| x * rhs).collect(),
-            vel: self.vel.iter().map(|x| x * rhs).collect(),
-        };
-    }
-}
-
-impl ops::Div<f64> for ParticleState {
-    type Output = ParticleState;
-    fn div(self, rhs: f64) -> ParticleState {
-        return ParticleState {
-            pos: self.pos.iter().map(|x| x / rhs).collect(),
-            vel: self.vel.iter().map(|x| x / rhs).collect(),
-        };
-    }
-}
-
-impl ops::Add<ParticleState> for &ParticleState {
-    type Output = ParticleState;
-
-    fn add(self, rhs: ParticleState) -> ParticleState {
-        return ParticleState {
-            pos: self
-                .pos
-                .iter()
-                .zip(rhs.pos.iter())
-                .map(|(x, y)| x + y)
-                .collect(),
-            vel: self
-                .vel
-                .iter()
-                .zip(rhs.vel.iter())
-                .map(|(x, y)| x + y)
-                .collect(),
-        };
-    }
-}
-
-impl ops::Mul<f64> for &ParticleState {
-    type Output = ParticleState;
-    fn mul(self, rhs: f64) -> ParticleState {
-        return ParticleState {
-            pos: self.pos.iter().map(|x| x * rhs).collect(),
-            vel: self.vel.iter().map(|x| x * rhs).collect(),
-        };
-    }
-}
-
-impl ops::Div<f64> for &ParticleState {
-    type Output = ParticleState;
-    fn div(self, rhs: f64) -> ParticleState {
-        return ParticleState {
-            pos: self.pos.iter().map(|x| x / rhs).collect(),
-            vel: self.vel.iter().map(|x| x / rhs).collect(),
-        };
-    }
-}
+impl_scalar_arithmetic!(Div, ParticleState, div, /);
+impl_scalar_arithmetic!(Div, &ParticleState, div, /);
