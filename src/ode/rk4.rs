@@ -4,20 +4,20 @@ use crate::{ParticleState, ParticleSystem};
 // Not much OOP yet, not sure if we want it
 
 /// Do one integration step, a helper function for RK4
-fn integrate_step(system: &impl ParticleSystem, state: ParticleState, step: f32) -> ParticleState {
+fn integrate_step(system: &impl ParticleSystem, state: ParticleState, step: f64) -> ParticleState {
     let k1 = system.time_derivative(&state);
-    let k2 = system.time_derivative(&(&state + &k1 * (step / 2f32)));
-    let k3 = system.time_derivative(&(&state + &k2 * (step / 2f32)));
+    let k2 = system.time_derivative(&(&state + &k1 * (step / 2f64)));
+    let k3 = system.time_derivative(&(&state + &k2 * (step / 2f64)));
     let k4 = system.time_derivative(&(&state + &k3 * step));
-    return state + (k1 + k2 * 2f32 + k3 * 2f32 + k4) * (step / 6f32);
+    return state + (k1 + k2 * 2f64 + k3 * 2f64 + k4) * (step / 6f64);
 }
 
 /// Simulate a process for given time, with given time step
 pub fn rk4_integrate(
     system: &impl ParticleSystem,
     state: ParticleState,
-    mut time: f32,
-    step: f32,
+    mut time: f64,
+    step: f64,
 ) -> ParticleState {
     let mut res = state;
     while time > step {
@@ -39,7 +39,7 @@ mod tests {
             pos: vec![glm::vec3(1.0, 0.0, 0.0)],
             vel: vec![glm::vec3(0.0, 0.0, 0.0)],
         };
-        let res = rk4_integrate(&SimpleCircleSystem {}, state, std::f32::consts::TAU, 0.005);
+        let res = rk4_integrate(&SimpleCircleSystem {}, state, std::f64::consts::TAU, 0.005);
         println!("{}", res.pos[0].x);
         assert!(glm::distance(&res.pos[0], &glm::vec3(1.0, 0.0, 0.0)) < 1e-3);
     }

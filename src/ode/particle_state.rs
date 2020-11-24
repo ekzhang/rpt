@@ -3,9 +3,9 @@ use std::ops;
 /// Represents current state of a particle system. Includes only positions and velocities currently.
 pub struct ParticleState {
     /// Position vectors
-    pub pos: Vec<glm::Vec3>,
+    pub pos: Vec<glm::DVec3>,
     /// Velocity vectors
-    pub vel: Vec<glm::Vec3>,
+    pub vel: Vec<glm::DVec3>,
 }
 
 impl ParticleState {}
@@ -40,9 +40,9 @@ impl ops::Add<ParticleState> for ParticleState {
     }
 }
 
-impl ops::Mul<f32> for ParticleState {
+impl ops::Mul<f64> for ParticleState {
     type Output = ParticleState;
-    fn mul(self, rhs: f32) -> ParticleState {
+    fn mul(self, rhs: f64) -> ParticleState {
         return ParticleState {
             pos: self.pos.iter().map(|x| x * rhs).collect(),
             vel: self.vel.iter().map(|x| x * rhs).collect(),
@@ -50,9 +50,9 @@ impl ops::Mul<f32> for ParticleState {
     }
 }
 
-impl ops::Div<f32> for ParticleState {
+impl ops::Div<f64> for ParticleState {
     type Output = ParticleState;
-    fn div(self, rhs: f32) -> ParticleState {
+    fn div(self, rhs: f64) -> ParticleState {
         return ParticleState {
             pos: self.pos.iter().map(|x| x / rhs).collect(),
             vel: self.vel.iter().map(|x| x / rhs).collect(),
@@ -81,9 +81,9 @@ impl ops::Add<ParticleState> for &ParticleState {
     }
 }
 
-impl ops::Mul<f32> for &ParticleState {
+impl ops::Mul<f64> for &ParticleState {
     type Output = ParticleState;
-    fn mul(self, rhs: f32) -> ParticleState {
+    fn mul(self, rhs: f64) -> ParticleState {
         return ParticleState {
             pos: self.pos.iter().map(|x| x * rhs).collect(),
             vel: self.vel.iter().map(|x| x * rhs).collect(),
@@ -91,9 +91,9 @@ impl ops::Mul<f32> for &ParticleState {
     }
 }
 
-impl ops::Div<f32> for &ParticleState {
+impl ops::Div<f64> for &ParticleState {
     type Output = ParticleState;
-    fn div(self, rhs: f32) -> ParticleState {
+    fn div(self, rhs: f64) -> ParticleState {
         return ParticleState {
             pos: self.pos.iter().map(|x| x / rhs).collect(),
             vel: self.vel.iter().map(|x| x / rhs).collect(),
