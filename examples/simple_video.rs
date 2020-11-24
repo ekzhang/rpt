@@ -4,7 +4,7 @@ use std::process::Command;
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    std::fs::create_dir("video");
+    std::fs::create_dir_all("video")?;
 
     for i in 0..60 {
         let mut scene = Scene::new();
@@ -53,22 +53,12 @@ fn main() -> color_eyre::Result<()> {
             .render()
             .save(format!("video/image_{}.png", i))?;
     }
+
     Command::new("ffmpeg")
-        .args(&[
-            "-y",
-            "-i",
-            "video/image_%d.png",
-            "-vcodec",
-            "libx264",
-            "-s",
-            "800x600",
-            "-pix_fmt",
-            "yuv420p",
-            "video.mp4",
-        ])
-        .spawn()
-        .unwrap()
-        .wait();
+        .args(&["-y", "-i", "video/image_%d.png", "-vcodec", "libx264"])
+        .args(&["-s", "800x600", "-pix_fmt", "yuv420p", "video.mp4"])
+        .spawn()?
+        .wait()?;
 
     Ok(())
 }
