@@ -1,4 +1,4 @@
-use crate::{ParticleSystem, ParticleState};
+use crate::{ParticleState, ParticleSystem};
 
 /// Implements Runge-Kutta 4 integrator
 // Not much OOP yet, not sure if we want it
@@ -13,7 +13,12 @@ fn integrate_step(system: &impl ParticleSystem, state: ParticleState, step: f32)
 }
 
 /// Simulate a process for given time, with given time step
-pub fn rk4_integrate(system: &impl ParticleSystem, state: ParticleState, mut time: f32, step: f32) -> ParticleState {
+pub fn rk4_integrate(
+    system: &impl ParticleSystem,
+    state: ParticleState,
+    mut time: f32,
+    step: f32,
+) -> ParticleState {
     let mut res = state;
     while time > step {
         res = integrate_step(system, res, step);
@@ -23,19 +28,18 @@ pub fn rk4_integrate(system: &impl ParticleSystem, state: ParticleState, mut tim
     return res;
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::odt::simple_circle_system::SimpleCircleSystem;
+    use crate::ode::simple_circle_system::SimpleCircleSystem;
 
     #[test]
     fn rk4_works() {
         let state = ParticleState {
             pos: vec![glm::vec3(1.0, 0.0, 0.0)],
-            vel: vec![glm::vec3(0.0, 0.0, 0.0)]
+            vel: vec![glm::vec3(0.0, 0.0, 0.0)],
         };
-        let res = rk4_integrate(&SimpleCircleSystem{}, state, std::f32::consts::TAU, 0.005);
+        let res = rk4_integrate(&SimpleCircleSystem {}, state, std::f32::consts::TAU, 0.005);
         println!("{}", res.pos[0].x);
         assert!(glm::distance(&res.pos[0], &glm::vec3(1.0, 0.0, 0.0)) < 1e-3);
     }

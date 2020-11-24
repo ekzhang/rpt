@@ -1,4 +1,4 @@
-use crate::{ParticleSystem, ParticleState};
+use crate::{ParticleState, ParticleSystem};
 
 /// System that represents solid gravity objects in space
 pub struct SolidGravitySystem;
@@ -16,6 +16,9 @@ impl ParticleSystem for SolidGravitySystem {
             }
         }
 
-        return ParticleState {pos: state.vel.clone(), vel: acc}
+        return ParticleState {
+            pos: state.vel.clone(),
+            vel: acc,
+        };
     }
 }
