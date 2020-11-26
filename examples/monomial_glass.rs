@@ -48,6 +48,8 @@ fn main() -> color_eyre::Result<()> {
     Renderer::new(&scene, Camera::default())
         .width(800)
         .height(600)
+        .max_bounces(1)
+        .num_samples(10)
         .render()
         .save("output.png")?;
 

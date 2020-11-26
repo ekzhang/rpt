@@ -1,11 +1,10 @@
-/// Represents a glass-like surface, given by height * sqrt(x^2 + z^2)^exp = y, x^2 + z^2 <= 1.
 use rand::{rngs::ThreadRng, Rng};
-use rand_distr::UnitSphere;
+use rand_distr::UnitCircle;
 
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
-/// A unit sphere centered at the origin
+/// Represents a glass-like surface with height and exp parameters, which points satisfy y = height * sqrt(x^2 + z^2)^exp, x^2 + z^2 <= 1.
 pub struct MonomialSurface {
     pub height: f64,
     pub exp: f64,
@@ -13,12 +12,6 @@ pub struct MonomialSurface {
 
 impl Shape for MonomialSurface {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
-        /*
-        let ray_scaled = Ray {
-            origin: glm::vec3(ray.origin.x, ray.origin.y / coef, ray.origin.z),
-            dir: glm::vec3(ray.dir.x, ray.dir.y / coef, ray.dir.z),
-        };
-        */
         let dist = |t: f64| {
             let x = ray.origin.x + t * ray.dir.x;
             let y = ray.origin.y + t * ray.dir.y;
@@ -77,9 +70,19 @@ impl Shape for MonomialSurface {
     }
 
     fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
-        let [x, y, z] = rng.sample(UnitSphere);
-        let p = glm::vec3(x, y, z);
-        (p, p, 0.25 * std::f64::consts::FRAC_1_PI)
+        let [x, z]: [f64; 2] = rng.sample(UnitCircle);
+        let pos = glm::vec3(x, self.height * (x * x + z * z).powf(self.exp / 2.), z);
+        let mut normal = glm::normalize(&glm::vec3(
+            self.height * 4. * pos.x * (pos.x * pos.x + pos.z * pos.z),
+            -1.,
+            self.height * 4. * pos.z * (pos.x * pos.x + pos.z * pos.z),
+        ));
+        // Again, only valid for exp = 4
+        const AREA: f64 = 6.3406654362; // thanks WolframAlpha, hope I have set up the integrals correctly
+        if rng.gen_bool(0.5) == true {
+            normal = -normal;
+        }
+        (pos, normal, 1. / (2. * AREA)) // 2 * AREA because there are two sides
     }
 }
 
