@@ -5,6 +5,7 @@ use std::io::{self, prelude::*, BufReader, SeekFrom};
 use std::sync::Arc;
 
 use crate::kdtree::{Bounded, BoundingBox};
+use crate::shape::monomial_surface::MonomialSurface;
 pub use cube::Cube;
 pub use mesh::{Mesh, Triangle};
 pub use plane::Plane;
@@ -12,6 +13,7 @@ pub use sphere::Sphere;
 
 mod cube;
 mod mesh;
+mod monomial_surface;
 mod plane;
 mod sphere;
 
@@ -287,6 +289,14 @@ impl<T: Shape> Transformed<T> {
 /// Helper function to construct a sphere
 pub fn sphere() -> Sphere {
     Sphere
+}
+
+/// Helper function to construct a glass-like monomial surface
+pub fn monomial_surface(height: f64, exp: f64) -> MonomialSurface {
+    MonomialSurface {
+        height: height,
+        exp: exp,
+    }
 }
 
 /// Helper function to construct a plane
