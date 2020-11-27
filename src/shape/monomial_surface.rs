@@ -71,7 +71,7 @@ impl Shape for MonomialSurface {
         true
     }
 
-    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, _target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
         let [x, z]: [f64; 2] = rng.sample(UnitCircle);
         let pos = glm::vec3(x, self.height * (x * x + z * z).powf(self.exp / 2.), z);
         let mut normal = glm::normalize(&glm::vec3(

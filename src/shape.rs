@@ -24,7 +24,7 @@ pub trait Shape: Send + Sync {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool;
 
     /// Sample the shape for a random point on its surface, also returning the normal and PDF
-    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64);
+    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64);
 }
 
 impl<T: Shape + ?Sized> Shape for Box<T> {
@@ -32,8 +32,8 @@ impl<T: Shape + ?Sized> Shape for Box<T> {
         self.as_ref().intersect(ray, t_min, record)
     }
 
-    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
-        self.as_ref().sample(rng)
+    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        self.as_ref().sample(target, rng)
     }
 }
 
@@ -42,8 +42,8 @@ impl<T: Shape + ?Sized> Shape for Arc<T> {
         self.as_ref().intersect(ray, t_min, record)
     }
 
-    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
-        self.as_ref().sample(rng)
+    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        self.as_ref().sample(target, rng)
     }
 }
 
@@ -140,8 +140,9 @@ impl<T: Shape> Shape for Transformed<T> {
         }
     }
 
-    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
-        let (v, n, p) = self.shape.sample(rng);
+    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        let target = (self.inverse_transform * glm::vec4(target.x, target.y, target.z, 1.0)).xyz();
+        let (v, n, p) = self.shape.sample(&target, rng);
         let new_normal = (self.normal_transform * n).normalize();
         let parallelepiped_height = (self.linear * n).dot(&new_normal);
         let parallelepiped_base = self.scale / parallelepiped_height;

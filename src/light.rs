@@ -36,7 +36,7 @@ impl Light {
                 (*color, -glm::normalize(direction), f64::INFINITY)
             }
             Light::Object(object) => {
-                let (v, n, p) = object.shape.sample(rng);
+                let (v, n, p) = object.shape.sample(&world_pos, rng);
                 let disp = v - world_pos;
                 let len = glm::length(&disp);
                 let cosine = (-disp.dot(&n)).max(0.0) / len;

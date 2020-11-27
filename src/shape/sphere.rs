@@ -1,5 +1,5 @@
 use rand::{rngs::ThreadRng, Rng};
-use rand_distr::UnitSphere;
+use rand_distr::UnitDisc;
 
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
@@ -40,10 +40,23 @@ impl Shape for Sphere {
         }
     }
 
-    fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
-        let [x, y, z] = rng.sample(UnitSphere);
-        let p = glm::vec3(x, y, z);
-        (p, p, 0.25 * std::f64::consts::FRAC_1_PI)
+    /// Sample a spherical light source, somewhat respecting the solid angle from a target point
+    ///
+    /// Currently, this implementation just generates a random point in the hemisphere facing
+    /// the target point, weighted by the cosine. This isn't the most sophisticated technique,
+    /// since you can sample the solid angle exactly, but it's pretty good.
+    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+        let [x, y]: [f64; 2] = rng.sample(UnitDisc);
+        let z = (1.0 - x * x - y * y).sqrt();
+        let n = target.normalize();
+        let n1 = if n.x.is_normal() {
+            glm::vec3(n.y, -n.x, 0.0).normalize()
+        } else {
+            glm::vec3(0.0, -n.z, n.y).normalize()
+        };
+        let n2 = n1.cross(&n);
+        let p = x * n1 + y * n2 + z * n;
+        (p, p, z * std::f64::consts::FRAC_1_PI)
     }
 }
 

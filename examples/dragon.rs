@@ -24,7 +24,9 @@ fn load_dragon() -> color_eyre::Result<Mesh> {
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
+    eprintln!("Loading dragon...");
     let dragon = load_dragon()?;
+    eprintln!("Finished loading dragon!");
 
     let mut scene = Scene::new();
     scene.add(
@@ -57,7 +59,7 @@ fn main() -> color_eyre::Result<()> {
     );
     Renderer::new(&scene, camera)
         .max_bounces(2)
-        .num_samples(10)
+        .num_samples(1)
         .render()
         .save("output.png")?;
 
