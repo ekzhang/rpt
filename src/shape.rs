@@ -318,12 +318,12 @@ pub fn polygon(verts: &[glm::DVec3]) -> Mesh {
     Mesh::new(tris)
 }
 
-fn parse_index(value: &str) -> Option<usize> {
+fn parse_index(value: &str, len: usize) -> Option<usize> {
     value.parse::<i32>().ok().and_then(|index| {
         if index > 0 {
             Some((index - 1) as usize)
         } else {
-            None
+            Some((len as i32 + index) as usize)
         }
     })
 }
@@ -381,7 +381,10 @@ pub fn load_obj(file: File) -> io::Result<Mesh> {
                             .chain(std::iter::repeat(""))
                             .take(3)
                             .collect();
-                        (parse_index(args[0]), parse_index(args[2]))
+                        (
+                            parse_index(args[0], vertices.len()),
+                            parse_index(args[2], normals.len()),
+                        )
                     })
                     .unzip();
                 for i in 1..(vi.len() - 1) {
