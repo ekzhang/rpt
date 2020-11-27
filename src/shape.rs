@@ -5,9 +5,9 @@ use std::io::{self, prelude::*, BufReader, SeekFrom};
 use std::sync::Arc;
 
 use crate::kdtree::{Bounded, BoundingBox};
-use crate::shape::monomial_surface::MonomialSurface;
 pub use cube::Cube;
 pub use mesh::{Mesh, Triangle};
+pub use monomial_surface::MonomialSurface;
 pub use plane::Plane;
 pub use sphere::Sphere;
 
@@ -293,10 +293,7 @@ pub fn sphere() -> Sphere {
 
 /// Helper function to construct a glass-like monomial surface
 pub fn monomial_surface(height: f64, exp: f64) -> MonomialSurface {
-    MonomialSurface {
-        height: height,
-        exp: exp,
-    }
+    MonomialSurface { height, exp }
 }
 
 /// Helper function to construct a plane

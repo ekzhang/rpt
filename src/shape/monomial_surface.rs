@@ -4,9 +4,12 @@ use rand_distr::UnitCircle;
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
-/// Represents a glass-like surface with height and exp parameters, which points satisfy y = height * sqrt(x^2 + z^2)^exp, x^2 + z^2 <= 1.
+/// Represents a glass-shaped surface with height and exp parameters, where points
+/// satisfy y = height * sqrt(x^2 + z^2)^exp, x^2 + z^2 <= 1.
 pub struct MonomialSurface {
+    /// The height of the surface
     pub height: f64,
+    /// The surface exponent
     pub exp: f64,
 }
 
@@ -16,13 +19,12 @@ impl Shape for MonomialSurface {
             let x = ray.origin.x + t * ray.dir.x;
             let y = ray.origin.y + t * ray.dir.y;
             let z = ray.origin.z + t * ray.dir.z;
-            return y - self.height * (x * x + z * z).powf(self.exp / 2f64); // can make exp / 2 integer to speed up
+            return y - self.height * (x * x + z * z).powf(self.exp / 2.0); // can make exp / 2 integer to speed up
         };
         let maximize: bool = dist(t_min) < 0.0;
-        let t_max: f64;
-        {
+        let t_max: f64 = {
             let mut l: f64 = t_min;
-            let mut r: f64 = 10000f64;
+            let mut r: f64 = 10000.0;
             for _ in 0..30 {
                 let ml = (2.0 * l + r) / 3.0;
                 let mr = (l + 2.0 * r) / 3.0;
@@ -32,8 +34,8 @@ impl Shape for MonomialSurface {
                     r = mr;
                 }
             }
-            t_max = l;
-        }
+            l
+        };
         if (dist(t_min) < 0.0) == (dist(t_max) < 0.0) {
             return false;
         }
@@ -66,7 +68,7 @@ impl Shape for MonomialSurface {
             record.normal = -record.normal;
         }
 
-        return true;
+        true
     }
 
     fn sample(&self, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
