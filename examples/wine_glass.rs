@@ -2,6 +2,7 @@ use image::{
     codecs::hdr::{HdrDecoder, HdrMetadata},
     ImageResult, Rgb,
 };
+use std::fs::File;
 use std::io::BufReader;
 use std::time::Instant;
 
@@ -32,7 +33,8 @@ fn main() -> color_eyre::Result<()> {
     scene.environment = Environment::Hdri(hdri);
 
     scene.add(
-        Object::new(load_obj("examples/wine_glass.obj")?).material(Material::clear(1.5, 0.0001)),
+        Object::new(load_obj(File::open("examples/wine_glass.obj")?)?)
+            .material(Material::clear(1.5, 0.0001)),
     );
     scene.add(
         Object::new(polygon(&[

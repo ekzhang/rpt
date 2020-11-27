@@ -4,6 +4,7 @@ use image::{
     codecs::hdr::{HdrDecoder, HdrMetadata},
     ImageResult, Rgb,
 };
+use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
 
@@ -30,7 +31,7 @@ fn main() -> color_eyre::Result<()> {
 
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
 
-    let teapot = Arc::new(load_obj("examples/teapot.obj")?);
+    let teapot = Arc::new(load_obj(File::open("examples/teapot.obj")?)?);
 
     let mut scene = Scene::new();
     scene.environment = Environment::Hdri(hdri);

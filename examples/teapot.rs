@@ -1,3 +1,5 @@
+use std::fs::File;
+
 use rpt::*;
 
 fn main() -> color_eyre::Result<()> {
@@ -7,7 +9,7 @@ fn main() -> color_eyre::Result<()> {
 
     scene.add(
         Object::new(
-            load_obj("examples/teapot.obj")?
+            load_obj(File::open("examples/teapot.obj")?)?
                 .scale(&glm::vec3(0.5, 0.5, 0.5))
                 .translate(&glm::vec3(0.0, -1.0, 0.0)),
         )

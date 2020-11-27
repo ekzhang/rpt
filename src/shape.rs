@@ -335,13 +335,13 @@ fn invalid_data(message: impl Into<Box<dyn Error + Send + Sync>>) -> io::Error {
 /// Helper function to load a mesh from a Wavefront .OBJ file
 ///
 /// See https://www.cs.cmu.edu/~mbz/personal/graphics/obj.html for details.
-pub fn load_obj(path: &str) -> io::Result<Mesh> {
+pub fn load_obj(file: File) -> io::Result<Mesh> {
     // TODO: no texture or material support yet
     let mut vertices: Vec<glm::DVec3> = Vec::new();
     let mut normals: Vec<glm::DVec3> = Vec::new();
     let mut triangles = Vec::new();
 
-    let reader = BufReader::new(File::open(path)?);
+    let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line?.trim().to_string();
         if line.starts_with("#") || line.is_empty() {
@@ -425,15 +425,11 @@ pub fn load_obj(path: &str) -> io::Result<Mesh> {
 ///
 /// See https://en.wikipedia.org/wiki/STL_%28file_format%29 and
 /// https://stackoverflow.com/a/26171886 for details.
-pub fn load_stl(path: &str) -> io::Result<Mesh> {
-    let size = std::fs::metadata(path)?.len();
+pub fn load_stl(mut file: File) -> io::Result<Mesh> {
+    let size = file.metadata()?.len();
     if size < 15 {
-        return Err(invalid_data(format!(
-            "Opened .STL file {} is too short",
-            path
-        )));
+        return Err(invalid_data("Loaded .STL file is too short"));
     }
-    let mut file = File::open(path)?;
     if size >= 84 {
         file.seek(SeekFrom::Start(80))?;
         let mut buf: [u8; 4] = Default::default();
@@ -452,10 +448,9 @@ pub fn load_stl(path: &str) -> io::Result<Mesh> {
         // ASCII STL format
         load_stl_ascii(file)
     } else {
-        Err(invalid_data(format!(
-            "Opened .STL file {}, but could not determine format",
-            path
-        )))
+        Err(invalid_data(
+            "Loaded .STL file, but could not determine format",
+        ))
     }
 }
 

@@ -1,7 +1,9 @@
 // This example demonstrates rendering with a kd-tree of kd-trees.
 
-use rpt::*;
+use std::fs::File;
 use std::sync::Arc;
+
+use rpt::*;
 
 fn gen(
     obj: Arc<Mesh>,
@@ -48,7 +50,7 @@ fn main() -> color_eyre::Result<()> {
     let colors = [0x264653, 0x2A9D8F, 0xE9C46A, 0xF4A261, 0xE76F51];
     let mut spheres: Vec<_> = colors.iter().map(|_| Vec::new()).collect();
 
-    let teapot = Arc::new(load_obj("examples/teapot.obj")?);
+    let teapot = Arc::new(load_obj(File::open("examples/teapot.obj")?)?);
     gen(teapot, &mut spheres, 0.0, 0.0, 0.0, 1.0, 0, None);
 
     let mut scene = Scene::new();
