@@ -6,6 +6,7 @@
 pub use buffer::*;
 pub use color::*;
 pub use environment::*;
+pub use io::*;
 pub use kdtree::*;
 pub use light::*;
 pub use material::*;
@@ -18,6 +19,7 @@ pub use shape::*;
 mod buffer;
 mod color;
 mod environment;
+mod io;
 mod kdtree;
 mod light;
 mod material;

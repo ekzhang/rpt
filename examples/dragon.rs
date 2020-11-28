@@ -24,9 +24,9 @@ fn load_dragon() -> color_eyre::Result<Mesh> {
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    eprintln!("Loading dragon...");
+    println!("Loading dragon...");
     let dragon = load_dragon()?;
-    eprintln!("Finished loading dragon!");
+    println!("Finished loading dragon!");
 
     let mut scene = Scene::new();
     scene.add(

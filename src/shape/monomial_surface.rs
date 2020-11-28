@@ -4,8 +4,9 @@ use rand_distr::UnitCircle;
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
-/// Represents a glass-shaped surface with height and exp parameters, where points
-/// satisfy y = height * sqrt(x^2 + z^2)^exp, x^2 + z^2 <= 1.
+/// Represents a glass-shaped surface with height and exp parameters
+///
+/// Points satisfy the relation y = height * sqrt(x^2 + z^2)^exp, x^2 + z^2 <= 1.
 pub struct MonomialSurface {
     /// The height of the surface
     pub height: f64,
