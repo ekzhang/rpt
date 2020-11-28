@@ -27,6 +27,9 @@ pub struct Renderer<'a> {
     /// The height of the output image
     pub height: u32,
 
+    /// Exposure value (EV)
+    pub exposure_value: f64,
+
     /// Optional noise-reduction filter
     pub filter: Filter,
 
@@ -98,6 +101,7 @@ impl<'a> Renderer<'a> {
             camera,
             width: 800,
             height: 600,
+            exposure_value: 0.0,
             filter: Filter::default(),
             max_bounces: 0,
             num_samples: 1,
@@ -113,6 +117,12 @@ impl<'a> Renderer<'a> {
     /// Set the height of the rendered scene
     pub fn height(mut self, height: u32) -> Self {
         self.height = height;
+        self
+    }
+
+    /// Set the exposure value of the rendered scene
+    pub fn exposure_value(mut self, exposure_value: f64) -> Self {
+        self.exposure_value = exposure_value;
         self
     }
 
@@ -180,7 +190,7 @@ impl<'a> Renderer<'a> {
             let dy = rng.gen_range(-1.0 / dim, 1.0 / dim);
             color += self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy), 0, &mut rng);
         }
-        color / f64::from(iterations)
+        color / f64::from(iterations) * 2.0_f64.powf(self.exposure_value)
     }
 
     /// Trace a ray, obtaining a Monte Carlo estimate of the luminance
