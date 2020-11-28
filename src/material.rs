@@ -231,6 +231,7 @@ impl Material {
         // Estimate specular contribution using Fresnel term
         let f0 = ((self.index - 1.0) / (self.index + 1.0)).powi(2);
         let f = (1.0 - self.metallic) * f0 + self.metallic * self.color.mean();
+        let f = glm::mix_scalar(f, 1.0, 0.2);
 
         // Ratio of refractive indices
         let eta_t = if wo.dot(n) > 0.0 {

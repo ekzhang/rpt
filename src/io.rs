@@ -233,7 +233,16 @@ fn load_mtl(file: File) -> io::Result<HashMap<String, Material>> {
                     let ns: f64 = tokens[1]
                         .parse()
                         .map_err(|_| invalid_data("Could not parse Ns value"))?;
-                    mat.index = ns;
+                    // Our materials can't correctly handle IOR of exactly 1.0
+                    mat.index = ns.max(1.0 + 1e-4);
+                }
+                "d" => {
+                    let dissolve: f64 = tokens[1]
+                        .parse()
+                        .map_err(|_| invalid_data("Could not parse d value"))?;
+                    if dissolve < 0.8 {
+                        mat.transparent = true;
+                    }
                 }
                 // Ignore all other mtllib commands
                 _ => (),
