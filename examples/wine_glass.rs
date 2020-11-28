@@ -27,7 +27,7 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
+    let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_8k.hdr")?;
 
     let mut scene = Scene::new();
     scene.environment = Environment::Hdri(hdri);
@@ -38,22 +38,22 @@ fn main() -> color_eyre::Result<()> {
     );
     scene.add(
         Object::new(polygon(&[
-            glm::vec3(-10.0, 0.0, -10.0),
-            glm::vec3(-10.0, 0.0, 10.0),
-            glm::vec3(10.0, 0.0, 10.0),
-            glm::vec3(10.0, 0.0, -10.0),
+            glm::vec3(-5.0, 0.0, -5.0),
+            glm::vec3(-5.0, 0.0, 5.0),
+            glm::vec3(5.0, 0.0, 5.0),
+            glm::vec3(5.0, 0.0, -5.0),
         ]))
         .material(Material::diffuse(hex_color(0x6f5d48))),
     );
 
-    scene.add(
+    scene.add(Light::Object(
         Object::new(
             sphere()
                 .scale(&glm::vec3(3.0, 3.0, 3.0))
                 .translate(&glm::vec3(11.15, 13.739, -4.9325)),
         )
         .material(Material::light(hex_color(0xFFFFFF), 200.0)),
-    );
+    ));
 
     let eye = glm::vec3(5.530, 4.375, 5.384);
     let camera = Camera::look_at(
@@ -65,11 +65,10 @@ fn main() -> color_eyre::Result<()> {
 
     let mut time = Instant::now();
     Renderer::new(&scene, camera)
-        .width(960)
-        .height(540)
+        .width(1920)
+        .height(1080)
         .max_bounces(6)
-        .num_samples(100)
-        .filter(Filter::Box(1))
+        .num_samples(1000)
         .iterative_render(10, |iteration, buffer| {
             let millis = time.elapsed().as_millis();
             println!(
