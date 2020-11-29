@@ -34,7 +34,7 @@ fn main() -> color_eyre::Result<()> {
     ));
 
     let camera = Camera::look_at(
-        glm::vec3(-2.5, 4.0, 8.5),
+        glm::vec3(-1.5, 5.5, 9.0),
         glm::vec3(0.0, 0.9, 0.0),
         glm::vec3(0.0, 1.0, 0.0),
         std::f64::consts::FRAC_PI_6,
