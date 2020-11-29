@@ -1,4 +1,4 @@
-use rand::{distributions::Uniform, rngs::ThreadRng, Rng};
+use rand::{distributions::Uniform, rngs::StdRng, Rng};
 
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
@@ -70,7 +70,7 @@ impl Shape for Cube {
         }
     }
 
-    fn sample(&self, _target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, _target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         let a = rng.gen::<f64>() - 0.5;
         let b = rng.gen::<f64>() - 0.5;
         let (v, n) = match rng.sample(Uniform::from(0..6)) {

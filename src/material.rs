@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng};
 use rand_distr::{UnitCircle, UnitDisc};
 
 use crate::color::{hex_color, Color};
@@ -224,7 +224,7 @@ impl Material {
         &self,
         n: &glm::DVec3,
         wo: &glm::DVec3,
-        rng: &mut ThreadRng,
+        rng: &mut StdRng,
     ) -> Option<(glm::DVec3, f64)> {
         let m2 = self.roughness * self.roughness;
 
@@ -240,7 +240,7 @@ impl Material {
             1.0 / self.index
         };
 
-        let beckmann = |rng: &mut ThreadRng| {
+        let beckmann = |rng: &mut StdRng| {
             // PIT for Beckmann distribution microfacet normal
             // θ = arctan √(-m^2 ln U)
             let theta = (m2 * -rng.gen::<f64>().ln()).sqrt().atan();

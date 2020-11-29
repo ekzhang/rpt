@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng};
 use rand_distr::UnitCircle;
 
 use super::{HitRecord, Ray, Shape};
@@ -75,7 +75,7 @@ impl Shape for MonomialSurface {
         true
     }
 
-    fn sample(&self, _target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, _target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         let [x, z]: [f64; 2] = rng.sample(UnitCircle);
         let pos = glm::vec3(x, self.height * (x * x + z * z).powf(self.exp / 2.), z);
         let mut normal = glm::normalize(&glm::vec3(

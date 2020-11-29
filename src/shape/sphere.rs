@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng};
 use rand_distr::UnitDisc;
 
 use super::{HitRecord, Ray, Shape};
@@ -45,7 +45,7 @@ impl Shape for Sphere {
     /// Currently, this implementation just generates a random point in the hemisphere facing
     /// the target point, weighted by the cosine. This isn't the most sophisticated technique,
     /// since you can sample the solid angle exactly, but it's pretty good.
-    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         let [x, y]: [f64; 2] = rng.sample(UnitDisc);
         let z = (1.0 - x * x - y * y).sqrt();
         let n = target.normalize();

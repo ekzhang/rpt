@@ -1,4 +1,4 @@
-use rand::rngs::ThreadRng;
+use rand::rngs::StdRng;
 
 use super::{HitRecord, Ray, Shape};
 
@@ -30,7 +30,7 @@ impl Shape for Plane {
         }
     }
 
-    fn sample(&self, _target: &glm::DVec3, _rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, _target: &glm::DVec3, _rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         unimplemented!()
     }
 }
