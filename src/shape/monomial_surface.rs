@@ -26,7 +26,7 @@ impl Shape for MonomialSurface {
         let t_max: f64 = {
             let mut l: f64 = t_min;
             let mut r: f64 = 10000.0;
-            for _ in 0..30 {
+            for _ in 0..60 {
                 let ml = (2.0 * l + r) / 3.0;
                 let mr = (l + 2.0 * r) / 3.0;
                 if maximize && dist(ml) < dist(mr) || !maximize && dist(ml) > dist(mr) {
@@ -42,13 +42,16 @@ impl Shape for MonomialSurface {
         }
         let mut l = t_min;
         let mut r = t_max;
-        for _ in 0..30 {
+        for _ in 0..60 {
             let m = (l + r) / 2.0;
             if (dist(m) >= 0.0) == maximize {
                 r = m;
             } else {
                 l = m;
             }
+        }
+        if r > record.time {
+            return false;
         }
         let pos = ray.at(r);
         if pos.x * pos.x + pos.z * pos.z > 1.0 {
