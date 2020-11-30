@@ -70,13 +70,13 @@ pub struct MarblesSystem {
 
 impl ParticleSystem for MarblesSystem {
     fn time_derivative(&self, state: &ParticleState) -> ParticleState {
-        let mut acc = vec![glm::vec3(0.0, -1.0, 0.0); state.pos.len()];
+        let mut acc = vec![glm::vec3(0.0, -0.5, 0.0); state.pos.len()];
         for i in 0..state.pos.len() {
             for j in 0..i {
                 let dir = glm::normalize(&(state.pos[i] - state.pos[j]));
                 let len = glm::length(&(state.pos[i] - state.pos[j]));
                 if len < 2. * self.radius {
-                    let force = dir * 100. * ((2. * self.radius - len) / self.radius).powi(5);
+                    let force = dir * 10. * ((2. * self.radius - len) / self.radius).powi(5);
                     acc[j] += force;
                     acc[i] -= force;
                 }
@@ -92,10 +92,11 @@ impl ParticleSystem for MarblesSystem {
             let vec = state.pos[i] - closest;
             if glm::length(&vec) < self.radius - 1e-12 {
                 let normal = glm::normalize(&vec);
-                pos_der[i] -= normal * (glm::dot(&state.vel[i], &normal));
+                //                pos_der[i] -= normal * (glm::dot(&state.vel[i], &normal));
                 //                pos_der[i] += normal * (self.radius - glm::length(&vec));
-                let normal_force = normal * glm::dot(&acc[i], &normal);
-                acc[i] -= normal_force;
+                let weight = normal * glm::dot(&acc[i], &normal);
+                let ratio_intersecting = (self.radius - glm::length(&vec)) / self.radius;
+                acc[i] -= 10000. * weight * ratio_intersecting.powi(10);
             }
         }
 

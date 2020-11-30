@@ -10,7 +10,7 @@ use crate::kdtree::{Bounded, BoundingBox};
 pub struct MonomialSurface {
     /// The height of the surface
     pub height: f64,
-    /// The surface exponent
+    /// The surface exponent, must be equal to 4 currently
     pub exp: f64,
 }
 
@@ -24,26 +24,36 @@ impl Shape for MonomialSurface {
             let x = ray.origin.x + t * ray.dir.x;
             let y = ray.origin.y + t * ray.dir.y;
             let z = ray.origin.z + t * ray.dir.z;
-            return y - self.height * (x * x + z * z).powf(self.exp / 2.0); // can make exp / 2 integer to speed up
+            return y - self.height * (x * x + z * z).powi(2);
         };
-        let maximize: bool = dist(t_min) < 0.0;
-        let t_max: f64 = {
-            let mut l: f64 = t_min;
-            let mut r: f64 = 10000.0;
-            for _ in 0..60 {
-                let ml = (2.0 * l + r) / 3.0;
-                let mr = (l + 2.0 * r) / 3.0;
-                if maximize && dist(ml) < dist(mr) || !maximize && dist(ml) > dist(mr) {
-                    l = ml;
-                } else {
-                    r = mr;
-                }
-            }
-            l
+        let deriv = |t: f64| {
+            let coef0 = ray.origin.x.powi(2) + ray.origin.z.powi(2);
+            let coef1 = 2. * (ray.origin.x * ray.dir.x + ray.origin.z * ray.dir.z);
+            let coef2 = ray.dir.x.powi(2) + ray.dir.z.powi(2);
+            let dy = 2. * coef0 * coef1
+                + 2. * t * (coef1 * coef1 + 2. * coef0 * coef2)
+                + 3. * t.powi(2) * 2. * coef1 * coef2
+                + 4. * t.powi(3) * coef2 * coef2;
+            return ray.dir.y - self.height * dy;
         };
+        let deriv2 = |t: f64| {
+            let coef0 = ray.origin.x.powi(2) + ray.origin.z.powi(2);
+            let coef1 = 2. * (ray.origin.x * ray.dir.x + ray.origin.z * ray.dir.z);
+            let coef2 = ray.dir.x.powi(2) + ray.dir.z.powi(2);
+            let dy = 2. * (coef1 * coef1 + 2. * coef0 * coef2)
+                + 3. * 2. * t * 2. * coef1 * coef2
+                + 4. * 3. * t.powi(2) * coef2 * coef2;
+            return -self.height * dy;
+        };
+        let mut cur_x = 0.;
+        for _ in 0..10 {
+            cur_x -= deriv(cur_x) / deriv2(cur_x);
+        }
+        let t_max = cur_x;
         if (dist(t_min) < 0.0) == (dist(t_max) < 0.0) {
             return false;
         }
+        let maximize: bool = dist(t_min) < 0.0;
         let mut l = t_min;
         let mut r = t_max;
         for _ in 0..60 {
