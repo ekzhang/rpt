@@ -23,7 +23,7 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
     ))
 }
 
-const TEST: bool = true;
+const TEST: bool = false;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -92,7 +92,7 @@ fn main() -> color_eyre::Result<()> {
             )
             .width(200)
             .height(150)
-            .max_bounces(3)
+            .max_bounces(7)
             .num_samples(1)
             .render()
             .save(format!("video/image_{}.png", frame))?;

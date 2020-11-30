@@ -26,10 +26,10 @@ impl Shape for MonomialSurface {
             let z = ray.origin.z + t * ray.dir.z;
             return y - self.height * (x * x + z * z).powi(2);
         };
+        let coef0 = ray.origin.x.powi(2) + ray.origin.z.powi(2);
+        let coef1 = 2. * (ray.origin.x * ray.dir.x + ray.origin.z * ray.dir.z);
+        let coef2 = ray.dir.x.powi(2) + ray.dir.z.powi(2);
         let deriv = |t: f64| {
-            let coef0 = ray.origin.x.powi(2) + ray.origin.z.powi(2);
-            let coef1 = 2. * (ray.origin.x * ray.dir.x + ray.origin.z * ray.dir.z);
-            let coef2 = ray.dir.x.powi(2) + ray.dir.z.powi(2);
             let dy = 2. * coef0 * coef1
                 + 2. * t * (coef1 * coef1 + 2. * coef0 * coef2)
                 + 3. * t.powi(2) * 2. * coef1 * coef2
@@ -37,23 +37,43 @@ impl Shape for MonomialSurface {
             return ray.dir.y - self.height * dy;
         };
         let deriv2 = |t: f64| {
-            let coef0 = ray.origin.x.powi(2) + ray.origin.z.powi(2);
-            let coef1 = 2. * (ray.origin.x * ray.dir.x + ray.origin.z * ray.dir.z);
-            let coef2 = ray.dir.x.powi(2) + ray.dir.z.powi(2);
             let dy = 2. * (coef1 * coef1 + 2. * coef0 * coef2)
                 + 3. * 2. * t * 2. * coef1 * coef2
                 + 4. * 3. * t.powi(2) * coef2 * coef2;
             return -self.height * dy;
         };
-        let mut cur_x = 0.;
-        for _ in 0..10 {
-            cur_x -= deriv(cur_x) / deriv2(cur_x);
+        let deriv3 = |t: f64| {
+            return 0.;
+            let dy = 3. * 2. * 2. * coef1 * coef2 + 4. * 3. * 2. * t * coef2 * coef2;
+            return -self.height * dy;
+        };
+        let t_max;
+        let maximize: bool = dist(t_min) < 0.0;
+        if maximize {
+            let mut cur_x = (b_min + b_max) / 2.;
+            for i in 0..10 {
+                let f = dist(cur_x);
+                if f > 0. {
+                    break;
+                }
+                let der = deriv(cur_x);
+                let der2 = deriv2(cur_x);
+                let der3 = deriv3(cur_x);
+                cur_x -= 2. * der * der2 / (2. * der2.powi(2) - der * der3);
+            }
+            if dist(cur_x) < 0. && deriv(cur_x).abs() > 1e-4 {
+                println!("{}", deriv(cur_x).abs());
+            }
+            t_max = cur_x;
+            if t_max < t_min {
+                return false;
+            }
+        } else {
+            t_max = 10000.;
         }
-        let t_max = cur_x;
         if (dist(t_min) < 0.0) == (dist(t_max) < 0.0) {
             return false;
         }
-        let maximize: bool = dist(t_min) < 0.0;
         let mut l = t_min;
         let mut r = t_max;
         for _ in 0..60 {
