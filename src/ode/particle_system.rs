@@ -88,8 +88,11 @@ impl ParticleSystem for MarblesSystem {
         for i in 0..state.pos.len() {
             let closest = surf.closest_point(&state.pos[i]);
             let vec = state.pos[i] - closest;
-            if glm::length(&vec) < R {
+            if glm::length(&vec) < R - 1e-12 {
                 pos_der[i] = glm::normalize(&vec) * (glm::length(&vec) - R);
+                let normal = glm::normalize(&vec);
+                let normal_force = normal * glm::dot(&acc[i], &normal);
+                acc[i] -= normal_force;
             }
         }
 
@@ -111,7 +114,12 @@ mod tests {
             vel: vec![glm::vec3(0.0, 0.0, 0.0)],
         };
         SimpleCircleSystem.rk4_integrate(&mut state, std::f64::consts::TAU, 0.005);
-        println!("{}", state.pos[0].x);
         assert!(glm::distance(&state.pos[0], &glm::vec3(1.0, 0.0, 0.0)) < 1e-3);
+        state = ParticleState {
+            pos: vec![glm::vec3(1.0, 0.0, 0.0)],
+            vel: vec![glm::vec3(0.0, 0.0, 0.0)],
+        };
+        SimpleCircleSystem.rk4_integrate(&mut state, std::f64::consts::PI, 0.005);
+        assert!(glm::distance(&state.pos[0], &glm::vec3(-1.0, 0.0, 0.0)) < 1e-3);
     }
 }

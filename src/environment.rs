@@ -1,6 +1,7 @@
 use crate::color::Color;
 
 /// High-dynamic-range equirectangular image for lighting 3D scenes
+#[derive(Clone)]
 pub struct Hdri {
     /// Width of the image
     width: u32,

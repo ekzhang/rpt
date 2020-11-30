@@ -41,7 +41,7 @@ macro_rules! impl_scalar_arithmetic {
             fn $fn(self, rhs: f64) -> ParticleState {
                 ParticleState {
                     pos: self.pos.iter().map(|x| x $op rhs).collect(),
-                    vel: self.pos.iter().map(|x| x $op rhs).collect(),
+                    vel: self.vel.iter().map(|x| x $op rhs).collect(),
                 }
             }
         }

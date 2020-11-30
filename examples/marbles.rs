@@ -35,16 +35,13 @@ fn main() -> color_eyre::Result<()> {
 
     let system = MarblesSystem;
 
-    for frame in 0..60 {
-        let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
-
+    let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
+    for frame in 0..120 {
         let mut scene = Scene::new();
-        scene.environment = Environment::Hdri(hdri);
+        scene.environment = Environment::Hdri(hdri.clone());
 
-        scene.add(
-            Object::new(monomial_surface(2f64, 4f64))
-                .material(Material::metallic(hex_color(0xffffff), 0.0001)),
-        );
+        let glass = Material::clear(1.5, 0.00001);
+        scene.add(Object::new(monomial_surface(2f64, 4f64)).material(glass));
         scene.add(
             Object::new(
                 sphere()
@@ -81,13 +78,13 @@ fn main() -> color_eyre::Result<()> {
                 fov: std::f64::consts::FRAC_PI_6,
             },
         )
-        .width(800)
-        .height(600)
-        .max_bounces(1)
-        .num_samples(100)
+        .width(200)
+        .height(150)
+        .max_bounces(3)
+        .num_samples(50)
         .render()
         .save(format!("video/image_{}.png", frame))?;
-        system.rk4_integrate(&mut cur_state, 1. / 60., 1. / 1000.);
+        system.rk4_integrate(&mut cur_state, 1. / 5., 1. / 1000.);
         println!("Frame {} finished", frame);
     }
     Command::new("ffmpeg")
