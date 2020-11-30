@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng};
 
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox, KdTree};
@@ -80,7 +80,7 @@ impl Shape for Triangle {
         }
     }
 
-    fn sample(&self, _target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, _target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         let mut u: f64 = rng.gen();
         let mut v: f64 = rng.gen();
         while u + v > 1.0 {

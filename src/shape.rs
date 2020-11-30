@@ -1,4 +1,4 @@
-use rand::rngs::ThreadRng;
+use rand::rngs::StdRng;
 use std::sync::Arc;
 
 use crate::kdtree::{Bounded, BoundingBox};
@@ -21,7 +21,7 @@ pub trait Shape: Send + Sync {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool;
 
     /// Sample the shape for a random point on its surface, also returning the normal and PDF
-    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64);
+    fn sample(&self, target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64);
 }
 
 /// Represents a physical shape, which can be hit by a ray and is able to find the closest point in the shape to a given point
@@ -35,7 +35,7 @@ impl<T: Shape + ?Sized> Shape for Box<T> {
         self.as_ref().intersect(ray, t_min, record)
     }
 
-    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         self.as_ref().sample(target, rng)
     }
 }
@@ -45,7 +45,7 @@ impl<T: Shape + ?Sized> Shape for Arc<T> {
         self.as_ref().intersect(ray, t_min, record)
     }
 
-    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         self.as_ref().sample(target, rng)
     }
 }
@@ -143,7 +143,7 @@ impl<T: Shape> Shape for Transformed<T> {
         }
     }
 
-    fn sample(&self, target: &glm::DVec3, rng: &mut ThreadRng) -> (glm::DVec3, glm::DVec3, f64) {
+    fn sample(&self, target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64) {
         let target = (self.inverse_transform * glm::vec4(target.x, target.y, target.z, 1.0)).xyz();
         let (v, n, p) = self.shape.sample(&target, rng);
         let new_normal = (self.normal_transform * n).normalize();

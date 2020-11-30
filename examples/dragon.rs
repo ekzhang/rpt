@@ -50,6 +50,14 @@ fn main() -> color_eyre::Result<()> {
         )
         .material(Material::light(glm::vec3(1.0, 1.0, 1.0), 160.0)),
     ));
+    scene.add(Light::Object(
+        Object::new(
+            sphere()
+                .scale(&glm::vec3(0.05, 0.05, 0.05))
+                .translate(&glm::vec3(-1.0, 0.71, 0.0)),
+        )
+        .material(Material::light(hex_color(0xFFAAAA), 400.0)),
+    ));
 
     let camera = Camera::look_at(
         glm::vec3(-2.5, 4.0, 6.5),

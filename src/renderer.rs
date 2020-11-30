@@ -1,5 +1,5 @@
 use image::RgbImage;
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use rayon::prelude::*;
 
 use crate::buffer::{Buffer, Filter};
@@ -170,31 +170,31 @@ impl<'a> Renderer<'a> {
         let colors: Vec<_> = (0..self.height)
             .into_par_iter()
             .flat_map(|y| {
+                let mut rng = StdRng::from_entropy();
                 (0..self.width)
                     .into_iter()
-                    .map(|x| self.get_color(x, y, iterations))
+                    .map(|x| self.get_color(x, y, iterations, &mut rng))
                     .collect::<Vec<_>>()
             })
             .collect();
         buffer.add_samples(&colors);
     }
 
-    fn get_color(&self, x: u32, y: u32, iterations: u32) -> Color {
+    fn get_color(&self, x: u32, y: u32, iterations: u32, rng: &mut StdRng) -> Color {
         let dim = std::cmp::max(self.width, self.height) as f64;
         let xn = ((2 * x + 1) as f64 - self.width as f64) / dim;
         let yn = ((2 * (self.height - y) - 1) as f64 - self.height as f64) / dim;
-        let mut rng = rand::thread_rng();
         let mut color = glm::vec3(0.0, 0.0, 0.0);
         for _ in 0..iterations {
             let dx = rng.gen_range(-1.0 / dim, 1.0 / dim);
             let dy = rng.gen_range(-1.0 / dim, 1.0 / dim);
-            color += self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy), 0, &mut rng);
+            color += self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy), 0, rng);
         }
         color / f64::from(iterations) * 2.0_f64.powf(self.exposure_value)
     }
 
     /// Trace a ray, obtaining a Monte Carlo estimate of the luminance
-    fn trace_ray(&self, ray: Ray, num_bounces: u32, rng: &mut ThreadRng) -> Color {
+    fn trace_ray(&self, ray: Ray, num_bounces: u32, rng: &mut StdRng) -> Color {
         match self.get_closest_hit(ray) {
             None => self.scene.environment.get_color(&ray.dir),
             Some((h, object)) => {
@@ -232,7 +232,7 @@ impl<'a> Renderer<'a> {
         pos: &glm::DVec3,
         n: &glm::DVec3,
         wo: &glm::DVec3,
-        rng: &mut ThreadRng,
+        rng: &mut StdRng,
     ) -> Color {
         let mut color = glm::vec3(0.0, 0.0, 0.0);
         for light in &self.scene.lights {

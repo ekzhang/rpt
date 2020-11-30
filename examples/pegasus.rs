@@ -49,40 +49,37 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let hdri = load_hdr("https://hdrihaven.com/files/hdris/birchwood_4k.hdr")?;
+    let hdri = load_hdr("https://hdrihaven.com/files/hdris/birchwood_8k.hdr")?;
 
     let pegasus = load_pegasus()?;
-    let ice = Material::transparent(hex_color(0xF8F8FF), 1.31, 0.1);
+    let ice = Material::transparent(hex_color(0xF8F8FF), 1.31, 0.2);
 
     let mut scene = Scene::new();
     scene.add(Object::new(pegasus.scale(&glm::vec3(1.4, 1.4, 1.4))).material(ice));
     scene.add(
-        Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -0.01))
-            .material(Material::diffuse(hex_color(0xDDDDDD))),
+        Object::new(polygon(&[
+            glm::vec3(2.0, -0.01, 2.0),
+            glm::vec3(2.0, -0.01, -2.0),
+            glm::vec3(-2.0, -0.01, -2.0),
+            glm::vec3(-2.0, -0.01, 2.0),
+        ]))
+        .material(Material::diffuse(hex_color(0xDDDDDD))),
     );
 
     scene.environment = Environment::Hdri(hdri);
-    scene.add(Light::Object(
-        Object::new(
-            sphere()
-                .scale(&glm::vec3(2.0, 2.0, 2.0))
-                .translate(&glm::vec3(-10.0, 20.0, 3.0)),
-        )
-        .material(Material::light(glm::vec3(1.0, 1.0, 1.0), 40.0)),
-    ));
 
     let camera = Camera::look_at(
-        glm::vec3(-1.5, 3.0, 4.5),
+        glm::vec3(0.0, 1.5, 3.1),
         glm::vec3(0.0, 1.0, 0.0),
         glm::vec3(0.0, 1.0, 0.0),
-        std::f64::consts::FRAC_PI_6,
+        std::f64::consts::FRAC_PI_4,
     );
 
     let mut time = Instant::now();
     Renderer::new(&scene, camera)
-        .width(800)
-        .height(800)
-        .exposure_value(-1.0)
+        .width(1200)
+        .height(1200)
+        .exposure_value(-1.5)
         .max_bounces(8)
         .num_samples(10)
         .iterative_render(1, |iteration, buffer| {
