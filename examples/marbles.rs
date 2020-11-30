@@ -64,10 +64,12 @@ fn main() -> color_eyre::Result<()> {
         );
 
         scene.add(Light::Ambient(glm::vec3(0.01, 0.01, 0.01)));
+        /*
         scene.add(Light::Point(
             glm::vec3(100.0, 100.0, 100.0),
             glm::vec3(0.0, 5.0, 5.0),
         ));
+        */
 
         Renderer::new(
             &scene,
@@ -81,10 +83,10 @@ fn main() -> color_eyre::Result<()> {
         .width(200)
         .height(150)
         .max_bounces(3)
-        .num_samples(50)
+        .num_samples(1)
         .render()
         .save(format!("video/image_{}.png", frame))?;
-        system.rk4_integrate(&mut cur_state, 1. / 5., 1. / 1000.);
+        system.rk4_integrate(&mut cur_state, 1. / 24., 1. / 1000.);
         println!("Frame {} finished", frame);
     }
     Command::new("ffmpeg")

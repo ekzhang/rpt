@@ -94,6 +94,33 @@ impl Shape for MonomialSurface {
 impl Physics for MonomialSurface {
     fn closest_point(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
+            // Can't normalize in this case
+            return *point;
+        }
+        // Move to the 2d coordinate system
+        let px = point.x.hypot(point.z);
+        let py = point.y;
+        let pt = glm::vec2(px, py);
+        let mut res = (1e18, -1.);
+        for x in -100..101 {
+            let xf = x as f64 / 100.;
+            let dist2 = glm::distance2(&pt, &glm::vec2(xf, self.height * xf.powi(4)));
+            if dist2 < res.0 {
+                res = (dist2, xf);
+            }
+        }
+        let xz = res.1 * glm::normalize(&glm::vec2(point.x, point.z));
+        return glm::vec3(
+            xz.x,
+            self.height * (xz.x.powi(2) + xz.y.powi(2)).powi(2),
+            xz.y,
+        );
+    }
+}
+impl MonomialSurface {
+    fn closest_point_fast(&self, point: &glm::DVec3) -> glm::DVec3 {
+        if glm::length(point) < 1e-12 {
+            // Can't normalize in this case
             return *point;
         }
         // Move to the 2d coordinate system
@@ -111,6 +138,11 @@ impl Physics for MonomialSurface {
             l = 0.;
             r = 1.;
         }
+        let tang = glm::vec2(l, 4. * self.height * l.powi(3));
+        let vec = glm::vec2(px - l, py - self.height * l.powi(4));
+        let tangr = glm::vec2(r, 4. * self.height * r.powi(3));
+        let vecr = glm::vec2(px - r, py - self.height * r.powi(4));
+        assert!(tang.dot(&vec).signum() != tangr.dot(&vecr).signum());
         for _ in 0..50 {
             let m: f64 = (l + r) / 2.;
             let tang = glm::vec2(m, 4. * self.height * m.powi(3));
@@ -141,9 +173,25 @@ mod tests {
             exp: 4.,
         };
         let test_xz = |x: f64, z: f64| {
+            // Test the closest point to (x, y(x, z), z)
             let pt = glm::vec3(x, (x.powi(2) + z.powi(2)).powi(2), z);
-            assert!(glm::distance(&pt, &surf.closest_point(&pt)) < 1e-3);
+            assert!(glm::distance(&pt, &surf.closest_point(&pt)) < 0.03);
         };
+        let test_xy = |x: f64, y: f64| {
+            // Test the closest point to the given (x, y, 0) (assume z=0 because the problem is the same in 3D)
+            let pt = glm::vec3(x, y, 0.);
+            let closest = surf.closest_point(&pt);
+            let dist = glm::distance2(&pt, &closest);
+            for i in -100..100 {
+                let xi = i as f64 / 100.;
+                let dist1 = glm::distance2(&pt, &glm::vec3(xi, xi.powi(4), 0.));
+                if dist1 < dist - 1e-5 {
+                    println!("Test failed for ({}, {}): found distance {}, but there is a point within distance {}", x, y, dist.sqrt(), dist1.sqrt());
+                    println!("The closest point was ({}, {})", closest.x, closest.y);
+                }
+            }
+        };
+        let clos_0 = surf.closest_point(&glm::vec3(0., 0., 0.));
         test_xz(0.0, 1.0);
         test_xz(0.0, -1.0);
         test_xz(0.23234, 0.723423);
@@ -159,6 +207,14 @@ mod tests {
         test_xz(0.0, 1e-12);
         test_xz(0.0, 1e-11);
         test_xz(0.0, 1e-10);
+
+        test_xy(0., 1.);
+        test_xy(0.123, 0.3124);
+        test_xy(-0.123, 0.4123);
+        test_xy(0., -1.);
+        test_xy(0., -10.);
+        test_xy(-1., 2.);
+        test_xy(-1., 0.5);
     }
 }
 
