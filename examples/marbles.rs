@@ -42,7 +42,7 @@ fn main() -> color_eyre::Result<()> {
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
     for frame in 0..120 {
         let mut scene = Scene::new();
-        scene.environment = Environment::Hdri(hdri.clone());
+        //        scene.environment = Environment::Hdri(hdri.clone());
 
         let glass = Material::clear(1.5, 0.00001);
         scene.add(Object::new(monomial_surface(2f64, 4f64)).material(glass));

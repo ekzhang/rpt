@@ -76,7 +76,7 @@ impl ParticleSystem for MarblesSystem {
                 let dir = glm::normalize(&(state.pos[i] - state.pos[j]));
                 let len = glm::length(&(state.pos[i] - state.pos[j]));
                 if len < 2. * self.radius {
-                    let force = dir * 0.1;
+                    let force = dir * 100. * ((2. * self.radius - len) / self.radius).powi(5);
                     acc[j] += force;
                     acc[i] -= force;
                 }
@@ -92,8 +92,8 @@ impl ParticleSystem for MarblesSystem {
             let vec = state.pos[i] - closest;
             if glm::length(&vec) < self.radius - 1e-12 {
                 let normal = glm::normalize(&vec);
-                pos_der[i] -= normal * (glm::dot(&state.vel[i], &normal) - 1e-3);
-                pos_der[i] += normal * (self.radius - glm::length(&vec));
+                pos_der[i] -= normal * (glm::dot(&state.vel[i], &normal));
+                //                pos_der[i] += normal * (self.radius - glm::length(&vec));
                 let normal_force = normal * glm::dot(&acc[i], &normal);
                 acc[i] -= normal_force;
             }
