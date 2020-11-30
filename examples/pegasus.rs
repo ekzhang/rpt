@@ -52,7 +52,7 @@ fn main() -> color_eyre::Result<()> {
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/birchwood_8k.hdr")?;
 
     let pegasus = load_pegasus()?;
-    let ice = Material::transparent(hex_color(0xF8F8FF), 1.31, 0.1);
+    let ice = Material::transparent(hex_color(0xF8F8FF), 1.31, 0.2);
 
     let mut scene = Scene::new();
     scene.add(Object::new(pegasus.scale(&glm::vec3(1.4, 1.4, 1.4))).material(ice));
@@ -69,7 +69,7 @@ fn main() -> color_eyre::Result<()> {
     scene.environment = Environment::Hdri(hdri);
 
     let camera = Camera::look_at(
-        glm::vec3(0.0, 0.7, 3.5),
+        glm::vec3(0.0, 1.5, 3.1),
         glm::vec3(0.0, 1.0, 0.0),
         glm::vec3(0.0, 1.0, 0.0),
         std::f64::consts::FRAC_PI_4,
@@ -77,8 +77,8 @@ fn main() -> color_eyre::Result<()> {
 
     let mut time = Instant::now();
     Renderer::new(&scene, camera)
-        .width(800)
-        .height(800)
+        .width(1200)
+        .height(1200)
         .exposure_value(-1.5)
         .max_bounces(8)
         .num_samples(10)
