@@ -16,6 +16,10 @@ pub struct MonomialSurface {
 
 impl Shape for MonomialSurface {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
+        let (b_min, b_max) = self.bounding_box().intersect(ray);
+        if f64::max(b_min, t_min) > f64::min(b_max, record.time) {
+            return false;
+        }
         let dist = |t: f64| {
             let x = ray.origin.x + t * ray.dir.x;
             let y = ray.origin.y + t * ray.dir.y;
