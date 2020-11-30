@@ -1,4 +1,5 @@
 use super::ParticleState;
+use crate::{MonomialSurface, Physics};
 
 /// A trait that represents a system formulating some physical laws
 pub trait ParticleSystem {
@@ -56,6 +57,44 @@ impl ParticleSystem for SolidGravitySystem {
 
         ParticleState {
             pos: state.vel.clone(),
+            vel: acc,
+        }
+    }
+}
+
+/// System that represents marbles and a glass
+pub struct MarblesSystem;
+
+impl ParticleSystem for MarblesSystem {
+    fn time_derivative(&self, state: &ParticleState) -> ParticleState {
+        const R: f64 = 0.1;
+        let mut acc = vec![glm::vec3(0.0, -1.0, 0.0); state.pos.len()];
+        for i in 0..state.pos.len() {
+            for j in 0..i {
+                let dir = glm::normalize(&(state.pos[i] - state.pos[j]));
+                let len = glm::length(&(state.pos[i] - state.pos[j]));
+                if len < 2. * R {
+                    let force = dir * 0.0001;
+                    acc[j] += force;
+                    acc[i] -= force;
+                }
+            }
+        }
+        let mut pos_der = state.vel.clone();
+        let surf = MonomialSurface {
+            height: 2.,
+            exp: 4.,
+        };
+        for i in 0..state.pos.len() {
+            let closest = surf.closest_point(&state.pos[i]);
+            let vec = state.pos[i] - closest;
+            if glm::length(&vec) < R {
+                pos_der[i] = glm::normalize(&vec) * (glm::length(&vec) - R);
+            }
+        }
+
+        ParticleState {
+            pos: pos_der,
             vel: acc,
         }
     }
