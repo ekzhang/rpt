@@ -118,7 +118,7 @@ impl Physics for MonomialSurface {
     }
 }
 impl MonomialSurface {
-    fn closest_point_fast(&self, point: &glm::DVec3) -> glm::DVec3 {
+    fn _closest_point_fast(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
             // Can't normalize in this case
             return *point;

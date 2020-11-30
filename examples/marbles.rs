@@ -28,12 +28,16 @@ fn main() -> color_eyre::Result<()> {
     std::fs::create_dir_all("video")?;
 
     let mut cur_state = ParticleState {
-        pos: vec![glm::vec3(0.1, 3., 0.2), glm::vec3(0.5, 4.5, 0.1)],
-        vel: vec![glm::vec3(0., 0., 0.); 2],
+        pos: vec![
+            glm::vec3(0.1, 3., 0.2),
+            glm::vec3(0.5, 3.5, 0.1),
+            glm::vec3(0.2, 4., 0.7),
+        ],
+        vel: vec![glm::vec3(0., 0., 0.); 3],
     };
-    const R: f64 = 0.1;
+    const R: f64 = 0.2;
 
-    let system = MarblesSystem;
+    let system = MarblesSystem { radius: R };
 
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
     for frame in 0..120 {
@@ -42,22 +46,17 @@ fn main() -> color_eyre::Result<()> {
 
         let glass = Material::clear(1.5, 0.00001);
         scene.add(Object::new(monomial_surface(2f64, 4f64)).material(glass));
-        scene.add(
-            Object::new(
-                sphere()
-                    .scale(&glm::vec3(R, R, R))
-                    .translate(&cur_state.pos[0]),
-            )
-            .material(Material::specular(hex_color(0x0000ff), 0.1)),
-        );
-        scene.add(
-            Object::new(
-                sphere()
-                    .scale(&glm::vec3(R, R, R))
-                    .translate(&cur_state.pos[1]),
-            )
-            .material(Material::specular(hex_color(0x00ff00), 0.1)),
-        );
+        let colors = [0x264653, 0x2A9D8F, 0xE9C46A, 0xF4A261, 0xE76F51];
+        for i in 0..3 {
+            scene.add(
+                Object::new(
+                    sphere()
+                        .scale(&glm::vec3(R, R, R))
+                        .translate(&cur_state.pos[i]),
+                )
+                .material(Material::specular(hex_color(colors[i % colors.len()]), 0.1)),
+            );
+        }
         scene.add(
             Object::new(plane(glm::vec3(0.0, 1.0, 0.0), 0.0))
                 .material(Material::specular(hex_color(0xaaaaaa), 0.5)),

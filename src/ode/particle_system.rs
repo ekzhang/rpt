@@ -63,17 +63,19 @@ impl ParticleSystem for SolidGravitySystem {
 }
 
 /// System that represents marbles and a glass
-pub struct MarblesSystem;
+pub struct MarblesSystem {
+    /// Radius of each of the marbles in the system
+    pub radius: f64,
+}
 
 impl ParticleSystem for MarblesSystem {
     fn time_derivative(&self, state: &ParticleState) -> ParticleState {
-        const R: f64 = 0.1;
         let mut acc = vec![glm::vec3(0.0, -1.0, 0.0); state.pos.len()];
         for i in 0..state.pos.len() {
             for j in 0..i {
                 let dir = glm::normalize(&(state.pos[i] - state.pos[j]));
                 let len = glm::length(&(state.pos[i] - state.pos[j]));
-                if len < 2. * R {
+                if len < 2. * self.radius {
                     let force = dir * 0.1;
                     acc[j] += force;
                     acc[i] -= force;
@@ -88,10 +90,10 @@ impl ParticleSystem for MarblesSystem {
         for i in 0..state.pos.len() {
             let closest = surf.closest_point(&state.pos[i]);
             let vec = state.pos[i] - closest;
-            if glm::length(&vec) < R - 1e-12 {
+            if glm::length(&vec) < self.radius - 1e-12 {
                 let normal = glm::normalize(&vec);
                 pos_der[i] -= normal * (glm::dot(&state.vel[i], &normal) - 1e-3);
-                pos_der[i] += normal * (R - glm::length(&vec));
+                pos_der[i] += normal * (self.radius - glm::length(&vec));
                 let normal_force = normal * glm::dot(&acc[i], &normal);
                 acc[i] -= normal_force;
             }
