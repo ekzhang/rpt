@@ -23,6 +23,8 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
     ))
 }
 
+const TEST: bool = false;
+
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     std::fs::create_dir_all("video")?;
@@ -42,7 +44,9 @@ fn main() -> color_eyre::Result<()> {
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
     for frame in 0..120 {
         let mut scene = Scene::new();
-        //        scene.environment = Environment::Hdri(hdri.clone());
+        if !TEST {
+            scene.environment = Environment::Hdri(hdri.clone());
+        }
 
         let glass = Material::clear(1.5, 0.00001);
         scene.add(Object::new(monomial_surface(2f64, 4f64)).material(glass));
@@ -63,28 +67,46 @@ fn main() -> color_eyre::Result<()> {
         );
 
         scene.add(Light::Ambient(glm::vec3(0.01, 0.01, 0.01)));
-        /*
-        scene.add(Light::Point(
-            glm::vec3(100.0, 100.0, 100.0),
-            glm::vec3(0.0, 5.0, 5.0),
-        ));
-        */
+        if !TEST {
+            scene.add(Light::Point(
+                glm::vec3(100.0, 100.0, 100.0),
+                glm::vec3(0.0, 5.0, 5.0),
+            ));
+        }
 
-        Renderer::new(
-            &scene,
-            Camera {
-                eye: glm::vec3(0.0, 1.0, 10.0),
-                direction: glm::vec3(0.0, 0.0, -1.0),
-                up: glm::vec3(0.0, 1.0, 0.0),
-                fov: std::f64::consts::FRAC_PI_6,
-            },
-        )
-        .width(200)
-        .height(150)
-        .max_bounces(3)
-        .num_samples(1)
-        .render()
-        .save(format!("video/image_{}.png", frame))?;
+        if TEST {
+            Renderer::new(
+                &scene,
+                Camera {
+                    eye: glm::vec3(0.0, 1.0, 10.0),
+                    direction: glm::vec3(0.0, 0.0, -1.0),
+                    up: glm::vec3(0.0, 1.0, 0.0),
+                    fov: std::f64::consts::FRAC_PI_6,
+                },
+            )
+            .width(200)
+            .height(150)
+            .max_bounces(3)
+            .num_samples(1)
+            .render()
+            .save(format!("video/image_{}.png", frame))?;
+        } else {
+            Renderer::new(
+                &scene,
+                Camera {
+                    eye: glm::vec3(0.0, 1.0, 10.0),
+                    direction: glm::vec3(0.0, 0.0, -1.0),
+                    up: glm::vec3(0.0, 1.0, 0.0),
+                    fov: std::f64::consts::FRAC_PI_6,
+                },
+            )
+            .width(800)
+            .height(600)
+            .max_bounces(3)
+            .num_samples(100)
+            .render()
+            .save(format!("video/image_{}.png", frame))?;
+        }
         system.rk4_integrate(&mut cur_state, 1. / 24., 1. / 1000.);
         println!("Frame {} finished", frame);
     }
