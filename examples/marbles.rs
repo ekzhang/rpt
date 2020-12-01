@@ -23,7 +23,7 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
     ))
 }
 
-const TEST: bool = false;
+const TEST: bool = true;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
