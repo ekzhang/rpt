@@ -51,7 +51,7 @@ impl Shape for MonomialSurface {
         let maximize: bool = dist(t_min) < 0.0;
         if maximize {
             let mut cur_x = (b_min + b_max) / 2.;
-            for i in 0..10 {
+            for _ in 0..10 {
                 let f = dist(cur_x);
                 if f > 0. {
                     break;
@@ -119,12 +119,13 @@ impl Shape for MonomialSurface {
         ));
         // Again, only valid for exp = 4
         const AREA: f64 = 6.3406654362; // thanks WolframAlpha, hope I have set up the integrals correctly
-        if rng.gen_bool(0.5) == true {
+        if rng.gen::<bool>() {
             normal = -normal;
         }
         (pos, normal, 1. / (2. * AREA)) // 2 * AREA because there are two sides
     }
 }
+
 impl Physics for MonomialSurface {
     fn closest_point(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
@@ -151,6 +152,7 @@ impl Physics for MonomialSurface {
         );
     }
 }
+
 impl MonomialSurface {
     fn _closest_point_fast(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
@@ -196,6 +198,15 @@ impl MonomialSurface {
     }
 }
 
+impl Bounded for MonomialSurface {
+    fn bounding_box(&self) -> BoundingBox {
+        BoundingBox {
+            p_min: glm::vec3(-1.0, 0.0, -1.0),
+            p_max: glm::vec3(1.0, self.height, 1.0),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,7 +236,7 @@ mod tests {
                 }
             }
         };
-        let clos_0 = surf.closest_point(&glm::vec3(0., 0., 0.));
+        let _ = surf.closest_point(&glm::vec3(0., 0., 0.));
         test_xz(0.0, 1.0);
         test_xz(0.0, -1.0);
         test_xz(0.23234, 0.723423);
@@ -249,14 +260,5 @@ mod tests {
         test_xy(0., -10.);
         test_xy(-1., 2.);
         test_xy(-1., 0.5);
-    }
-}
-
-impl Bounded for MonomialSurface {
-    fn bounding_box(&self) -> BoundingBox {
-        BoundingBox {
-            p_min: glm::vec3(-1.0, 0.0, -1.0),
-            p_max: glm::vec3(1.0, self.height, 1.0),
-        }
     }
 }

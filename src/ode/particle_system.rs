@@ -82,7 +82,6 @@ impl ParticleSystem for MarblesSystem {
                 }
             }
         }
-        let mut pos_der = state.vel.clone();
         let surf = MonomialSurface {
             height: 2.,
             exp: 4.,
@@ -102,7 +101,7 @@ impl ParticleSystem for MarblesSystem {
         }
 
         ParticleState {
-            pos: pos_der,
+            pos: state.vel.clone(),
             vel: acc,
         }
     }

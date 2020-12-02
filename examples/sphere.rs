@@ -6,7 +6,7 @@ fn main() {
     scene.add(Object::new(sphere())); // default red material
     scene.add(
         Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -1.0))
-            .material(Material::diffuse(hex_color(0xaaaaaa))),
+            .material(Material::diffuse(hex_color(0xAAAAAA))),
     );
     scene.add(Light::Object(
         Object::new(

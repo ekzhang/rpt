@@ -3,7 +3,7 @@
 [![Latest Version](https://img.shields.io/crates/v/rpt.svg)](https://crates.io/crates/rpt)
 [![API Documentation](https://docs.rs/rpt/badge.svg)](https://docs.rs/rpt)
 
-This is a physically-based rendering engine written in Rust. It uses path tracing to generate realistic images of 3D scenes.
+This is a physically-based, CPU-only rendering engine written in Rust. It uses path tracing to generate realistic images of 3D scenes.
 
 ![Demo renders](https://i.imgur.com/cFU8Zca.jpg)
 
@@ -38,7 +38,7 @@ cargo test
 
 To use `rpt` as a library, add the following to your `Cargo.toml`:
 
-<sub>(The [`nalgebra-glm`](https://www.nalgebra.org/) library is used for vector math.)</sub>
+<sub>(The [`nalgebra-glm`](https://www.nalgebra.org/) library is required for vector math.)</sub>
 
 ```toml
 [dependencies]
@@ -57,7 +57,7 @@ fn main() {
     scene.add(Object::new(sphere())); // default red material
     scene.add(
         Object::new(plane(glm::vec3(0.0, 1.0, 0.0), -1.0))
-            .material(Material::diffuse(hex_color(0xaaaaaa))),
+            .material(Material::diffuse(hex_color(0xAAAAAA))),
     );
     scene.add(Light::Object(
         Object::new(
