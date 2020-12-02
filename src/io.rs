@@ -21,7 +21,7 @@ fn invalid_data(message: impl Into<Box<dyn Error + Send + Sync>>) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
-/// Helper function to load a mesh geometry from a Wavefront .OBJ file
+/// Load a mesh geometry from a Wavefront .OBJ file
 ///
 /// See [here](https://www.cs.cmu.edu/~mbz/personal/graphics/obj.html) for details.
 pub fn load_obj(file: File) -> io::Result<Mesh> {
@@ -72,7 +72,7 @@ pub fn load_obj(file: File) -> io::Result<Mesh> {
     Ok(Mesh::new(triangles))
 }
 
-/// Helper function to load an object, with materials, from a Wavefront .OBJ file
+/// Load an object, with materials, from a Wavefront .OBJ file
 ///
 /// This function ignores the `mtllib` commands that look for files in the same directory,
 /// instead choosing a more explicit approach where you pass in the `.mtl` file directly
@@ -252,7 +252,7 @@ fn load_mtl(file: File) -> io::Result<HashMap<String, Material>> {
     Ok(materials)
 }
 
-/// Helper function to load a mesh from a .STL file
+/// Load a mesh from a .STL file
 ///
 /// See https://en.wikipedia.org/wiki/STL_%28file_format%29 and
 /// https://stackoverflow.com/a/26171886 for details.

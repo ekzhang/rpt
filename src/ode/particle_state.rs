@@ -1,6 +1,6 @@
 use std::ops;
 
-/// Represents current state of a particle system. Includes only positions and velocities currently.
+/// Represents current state of a particle system, including positions and velocities
 #[derive(Clone, Debug)]
 pub struct ParticleState {
     /// Position vectors
