@@ -94,7 +94,7 @@ impl ParticleSystem for MarblesSystem {
             //            let normal_acc = normal * glm::dot(&acc[i], &normal);
             let normal_vel = &state.vel[i].dot(&normal);
             if -0.1 < ratio_intersecting && ratio_intersecting < 0. {
-                acc[i] -= 5. * normal * normal_vel.powi(3);
+                acc[i] -= 30. * normal * normal_vel.powi(3);
             } else if ratio_intersecting >= 0. {
                 acc[i] += 100. * normal * ratio_intersecting.powi(1);
             }

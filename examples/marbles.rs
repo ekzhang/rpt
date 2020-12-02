@@ -5,7 +5,9 @@ use image::{
 use std::io::BufReader;
 
 use rpt::*;
+use std::fs::File;
 use std::process::Command;
+use std::sync::Arc;
 
 fn rgb_to_color(rgb: Rgb<f32>) -> Color {
     glm::vec3(rgb.0[0] as f64, rgb.0[1] as f64, rgb.0[2] as f64)
@@ -23,19 +25,19 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
     ))
 }
 
-const TEST: bool = true;
+const TEST: bool = false;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     std::fs::create_dir_all("video")?;
 
-    const N: usize = 9;
+    const N: usize = 16;
     let pos = (0..N)
         .map(|i| {
             glm::vec3(
-                (i / 3) as f64 / 3.,
-                3. + rand::random::<f64>() * 2.,
-                (i % 3) as f64 / 3.,
+                (i / 4) as f64 / 4.,
+                4. + rand::random::<f64>() * 2.,
+                (i % 4) as f64 / 4.,
             )
         })
         .collect();
@@ -48,14 +50,16 @@ fn main() -> color_eyre::Result<()> {
     let system = MarblesSystem { radius: R };
 
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
-    for frame in 0..360 {
+    let surface_shape =
+        Arc::new(load_obj(File::open("examples/monomial.obj")?)?.scale(&glm::vec3(1., 1., 1.)));
+    for frame in 0..720 {
         let mut scene = Scene::new();
         if !TEST {
             scene.environment = Environment::Hdri(hdri.clone());
         }
 
         let glass = Material::clear(1.5, 0.00001);
-        scene.add(Object::new(monomial_surface(2f64, 4f64)).material(glass));
+        scene.add(Object::new(surface_shape.clone()).material(glass));
         let colors = [0x264653, 0x2A9D8F, 0xE9C46A, 0xF4A261, 0xE76F51];
         for i in 0..N {
             scene.add(
