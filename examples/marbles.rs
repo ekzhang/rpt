@@ -35,9 +35,9 @@ fn main() -> color_eyre::Result<()> {
     let pos = (0..N)
         .map(|i| {
             glm::vec3(
-                (i / 4) as f64 / 4.,
-                4. + rand::random::<f64>() * 2.,
-                (i % 4) as f64 / 4.,
+                (i / 4) as f64 / 4. - 0.375,
+                3. + ((i / 4 + i) % 2) as f64 * 1.0,
+                (i % 4) as f64 / 4. - 0.375,
             )
         })
         .collect();
@@ -49,18 +49,26 @@ fn main() -> color_eyre::Result<()> {
 
     let system = MarblesSystem { radius: R };
 
-    let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_2k.hdr")?;
-    let surface_shape =
-        Arc::new(load_obj(File::open("examples/monomial.obj")?)?.scale(&glm::vec3(1., 1., 1.)));
-    for frame in 0..720 {
+    let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_8k.hdr")?;
+    let surface_shape = Arc::new(load_obj(File::open("examples/monomial.obj")?)?);
+    for frame in 0..360 {
         let mut scene = Scene::new();
         if !TEST {
             scene.environment = Environment::Hdri(hdri.clone());
+            scene.add(Light::Object(
+                Object::new(
+                    sphere()
+                        .scale(&glm::vec3(1.5, 1.5, 1.5))
+                        .translate(&glm::vec3(0.0, 5.0, 0.0))
+                )
+                .material(Material::light(hex_color(0xFFFFFF), 15.0))
+            ));
+        } else {
+            scene.add(Light::Ambient(glm::vec3(0.01, 0.01, 0.01)));
         }
 
-        let glass = Material::clear(1.5, 0.00001);
-        //        scene.add(Object::new(surface_shape.clone()).material(glass));
-        scene.add(Object::new(monomial_surface(2., 4.)).material(glass));
+        let glass = Material::clear(1.5, 0.0001);
+        scene.add(Object::new(surface_shape.clone()).material(glass));
         let colors = [0x264653, 0x2A9D8F, 0xE9C46A, 0xF4A261, 0xE76F51];
         let surf = monomial_surface(2., 4.);
         for i in 0..N {
@@ -76,24 +84,22 @@ fn main() -> color_eyre::Result<()> {
             );
         }
         scene.add(
-            Object::new(plane(glm::vec3(0.0, 1.0, 0.0), 0.0))
-                .material(Material::specular(hex_color(0xaaaaaa), 0.5)),
+            Object::new(polygon(&[
+                glm::vec3(20.0, -0.06, 20.0),
+                glm::vec3(20.0, -0.06, -20.0),
+                glm::vec3(-20.0, -0.06, -20.0),
+                glm::vec3(-20.0, -0.06, 20.0),
+            ]))
+            .material(Material::diffuse(hex_color(0xAAAAAA))),
         );
-
-        scene.add(Light::Ambient(glm::vec3(0.01, 0.01, 0.01)));
-        if !TEST {
-            scene.add(Light::Point(
-                glm::vec3(100.0, 100.0, 100.0),
-                glm::vec3(0.0, 5.0, 5.0),
-            ));
-        }
 
         let camera = Camera::look_at(
-            glm::vec3(0.0, 1.0, 10.0),
+            glm::vec3(0.0, 1.0, 6.0),
             glm::vec3(0.0, 1.0, 0.0),
             glm::vec3(0.0, 1.0, 0.0),
-            std::f64::consts::FRAC_PI_6,
-        );
+            std::f64::consts::FRAC_PI_4,
+        )
+        .focus(glm::vec3(0.0, 1.0, 0.0), 0.02);
 
         if TEST {
             Renderer::new(&scene, camera)
@@ -107,8 +113,8 @@ fn main() -> color_eyre::Result<()> {
             Renderer::new(&scene, camera)
                 .width(800)
                 .height(600)
-                .max_bounces(3)
-                .num_samples(100)
+                .max_bounces(7)
+                .num_samples(200)
                 .render()
                 .save(format!("video/image_{}.png", frame))?;
         }
