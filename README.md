@@ -20,7 +20,7 @@ This is a physically-based rendering engine written in Rust. It uses path tracin
 - Supports physics simulation with numerical integrators and particle systems
 - Uses all CPU cores concurrently, scaling linearly up to 96 cores
 
-## Usage
+## Quickstart
 
 First, clone the repository. The library containing path tracing code is located inside `src/`. Example code and scenes are located in `examples/`. To compile and run `examples/basic.rs`, use the command:
 
@@ -34,7 +34,7 @@ To run tests, use:
 cargo test
 ```
 
-### Quickstart
+### Library Usage
 
 To use `rpt` as a library, add the following to your `Cargo.toml`:
 
@@ -101,7 +101,14 @@ This code can also be found in `examples/sphere.rs`. Note that the shadow is cor
 
 ## Samples
 
-_Add images here._
+![Dragon](https://i.imgur.com/UEWtPDi.png)
+![Cornell box](https://i.imgur.com/K7H8rz4.png)
+![Pegasus](https://i.imgur.com/sBKAboG.png)
+![Lego plane](https://i.imgur.com/BMVCnZ7.png)
+![Fractal spheres](https://i.imgur.com/4aO9A2o.png)
+![Rustacean](https://i.imgur.com/zZgl7jE.png)
+![Wine glass](https://i.imgur.com/8EAmwuq.png)
+![Teapots](https://i.imgur.com/P3tnnaa.png)
 
 ## Acknowledgements
 
