@@ -1,7 +1,13 @@
 [package]
 name = "rpt"
 version = "0.1.0"
-authors = ["Eric Zhang <ekzhang1@gmail.com>"]
+authors = ["Eric Zhang <ekzhang1@gmail.com>", "Alexander Morozov <scanhex@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "Physically-based path tracing renderer written in Rust"
+repository = "https://github.com/ekzhang/rpt"
+documentation = "https://docs.rs/rpt"
+keywords = ["path-tracing", "ray-tracing", "pbr", "rendering", "graphics"]
+categories = ["graphics", "rendering::engine", "rendering::data-formats", "multimedia::images"]
 edition = "2018"
 
 [dependencies]
