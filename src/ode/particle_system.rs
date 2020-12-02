@@ -99,6 +99,10 @@ impl ParticleSystem for MarblesSystem {
                 acc[i] += 100. * normal * ratio_intersecting.powi(1);
             }
         }
+        for i in 0..state.pos.len() {
+            //introduce "air resistance"
+            acc[i] -= state.vel[i] / 5.;
+        }
 
         ParticleState {
             pos: state.vel.clone(),
