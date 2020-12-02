@@ -16,6 +16,7 @@ fn main() -> color_eyre::Result<()> {
         direction: glm::vec3(0.0, 0.0, 1.0),
         up: glm::vec3(0.0, 1.0, 0.0),
         fov: 0.686,
+        ..Default::default()
     };
 
     let white = Material::diffuse(hex_color(0xAAAAAA));

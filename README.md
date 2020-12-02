@@ -16,6 +16,7 @@ This is a physically-based, CPU-only rendering engine written in Rust. It uses p
 - Uses kd-trees to accelerate ray intersections
 - Supports direct light sampling and emissive materials
 - Supports HDRI environment maps
+- Supports depth of field
 - Supports iterative rendering, variance estimation, and firefly reduction
 - Supports physics simulation with numerical integrators and particle systems
 - Uses all CPU cores concurrently, scaling linearly up to 96 cores

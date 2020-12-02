@@ -81,6 +81,7 @@ fn main() -> color_eyre::Result<()> {
         direction: glm::vec3(-0.285714, -0.5, -1.0).normalize(),
         up: glm::vec3(0.0, 1.0, -0.5).normalize(),
         fov: std::f64::consts::FRAC_PI_6,
+        ..Default::default()
     };
     Renderer::new(&scene, camera)
         .width(800)

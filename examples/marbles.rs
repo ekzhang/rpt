@@ -80,38 +80,29 @@ fn main() -> color_eyre::Result<()> {
             ));
         }
 
+        let camera = Camera::look_at(
+            glm::vec3(0.0, 1.0, 10.0),
+            glm::vec3(0.0, 1.0, 0.0),
+            glm::vec3(0.0, 1.0, 0.0),
+            std::f64::consts::FRAC_PI_6,
+        );
+
         if TEST {
-            Renderer::new(
-                &scene,
-                Camera {
-                    eye: glm::vec3(0.0, 1.0, 10.0),
-                    direction: glm::vec3(0.0, 0.0, -1.0),
-                    up: glm::vec3(0.0, 1.0, 0.0),
-                    fov: std::f64::consts::FRAC_PI_6,
-                },
-            )
-            .width(200)
-            .height(150)
-            .max_bounces(7)
-            .num_samples(1)
-            .render()
-            .save(format!("video/image_{}.png", frame))?;
+            Renderer::new(&scene, camera)
+                .width(200)
+                .height(150)
+                .max_bounces(7)
+                .num_samples(1)
+                .render()
+                .save(format!("video/image_{}.png", frame))?;
         } else {
-            Renderer::new(
-                &scene,
-                Camera {
-                    eye: glm::vec3(0.0, 1.0, 10.0),
-                    direction: glm::vec3(0.0, 0.0, -1.0),
-                    up: glm::vec3(0.0, 1.0, 0.0),
-                    fov: std::f64::consts::FRAC_PI_6,
-                },
-            )
-            .width(800)
-            .height(600)
-            .max_bounces(3)
-            .num_samples(100)
-            .render()
-            .save(format!("video/image_{}.png", frame))?;
+            Renderer::new(&scene, camera)
+                .width(800)
+                .height(600)
+                .max_bounces(3)
+                .num_samples(100)
+                .render()
+                .save(format!("video/image_{}.png", frame))?;
         }
         system.rk4_integrate(&mut cur_state, 1. / 24., 1. / 10000.);
         println!("Frame {} finished", frame);

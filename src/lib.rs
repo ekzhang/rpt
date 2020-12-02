@@ -4,6 +4,7 @@
 #![warn(missing_docs)]
 
 pub use buffer::*;
+pub use camera::*;
 pub use color::*;
 pub use environment::*;
 pub use io::*;
@@ -17,6 +18,7 @@ pub use scene::*;
 pub use shape::*;
 
 mod buffer;
+mod camera;
 mod color;
 mod environment;
 mod io;

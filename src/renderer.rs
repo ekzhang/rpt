@@ -3,6 +3,7 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 use rayon::prelude::*;
 
 use crate::buffer::{Buffer, Filter};
+use crate::camera::Camera;
 use crate::color::Color;
 use crate::light::Light;
 use crate::material::Material;
@@ -38,59 +39,6 @@ pub struct Renderer<'a> {
 
     /// Number of random paths traced per pixel
     pub num_samples: u32,
-}
-
-/// A simple perspective camera
-#[derive(Copy, Clone, Debug)]
-pub struct Camera {
-    /// Location of the camera
-    pub eye: glm::DVec3,
-
-    /// Direction that the camera is facing
-    pub direction: glm::DVec3,
-
-    /// Direction of "up" for screen, must be orthogonal to `direction`
-    pub up: glm::DVec3,
-
-    /// Field of view in the longer direction as an angle in radians, in (0, pi)
-    pub fov: f64,
-}
-
-impl Default for Camera {
-    fn default() -> Self {
-        Self {
-            eye: glm::vec3(0.0, 0.0, 10.0),
-            direction: glm::vec3(0.0, 0.0, -1.0),
-            up: glm::vec3(0.0, 1.0, 0.0), // we live in a y-up world...
-            fov: std::f64::consts::FRAC_PI_6,
-        }
-    }
-}
-
-impl Camera {
-    /// Perspective camera looking at a point, with a given field of view
-    pub fn look_at(eye: glm::DVec3, center: glm::DVec3, up: glm::DVec3, fov: f64) -> Self {
-        let direction = (center - eye).normalize();
-        let up = (up - up.dot(&direction) * direction).normalize();
-        Self {
-            eye,
-            direction,
-            up,
-            fov,
-        }
-    }
-
-    /// Cast a ray, where (x, y) are normalized to the standard [-1, 1] box
-    pub fn cast_ray(&self, x: f64, y: f64) -> Ray {
-        // cot(f / 2) = depth / radius
-        let d = (self.fov / 2.0).tan().recip();
-        let right = glm::cross(&self.direction, &self.up).normalize();
-        let new_dir = d * self.direction + x * right + y * self.up;
-        Ray {
-            origin: self.eye,
-            dir: new_dir.normalize(),
-        }
-    }
 }
 
 impl<'a> Renderer<'a> {
@@ -188,7 +136,7 @@ impl<'a> Renderer<'a> {
         for _ in 0..iterations {
             let dx = rng.gen_range(-1.0 / dim, 1.0 / dim);
             let dy = rng.gen_range(-1.0 / dim, 1.0 / dim);
-            color += self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy), 0, rng);
+            color += self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy, rng), 0, rng);
         }
         color / f64::from(iterations) * 2.0_f64.powf(self.exposure_value)
     }
