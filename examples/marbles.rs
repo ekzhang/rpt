@@ -25,7 +25,7 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
     ))
 }
 
-const TEST: bool = false;
+const TEST: bool = true;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -45,7 +45,7 @@ fn main() -> color_eyre::Result<()> {
         pos: pos,
         vel: vec![glm::vec3(0., 0., 0.); N],
     };
-    const R: f64 = 0.2;
+    const R: f64 = 0.1;
 
     let system = MarblesSystem { radius: R };
 
@@ -59,16 +59,20 @@ fn main() -> color_eyre::Result<()> {
         }
 
         let glass = Material::clear(1.5, 0.00001);
-        scene.add(Object::new(surface_shape.clone()).material(glass));
+        //        scene.add(Object::new(surface_shape.clone()).material(glass));
+        scene.add(Object::new(monomial_surface(2., 4.)).material(glass));
         let colors = [0x264653, 0x2A9D8F, 0xE9C46A, 0xF4A261, 0xE76F51];
+        let surf = monomial_surface(2., 4.);
         for i in 0..N {
+            let mut pos = cur_state.pos[i];
+            let closest = surf.closest_point(&pos);
+            let vec = pos - closest;
+            if glm::length(&vec) < R {
+                pos = closest + glm::normalize(&vec) * R;
+            }
             scene.add(
-                Object::new(
-                    sphere()
-                        .scale(&glm::vec3(R, R, R))
-                        .translate(&cur_state.pos[i]),
-                )
-                .material(Material::specular(hex_color(colors[i % colors.len()]), 0.1)),
+                Object::new(sphere().scale(&glm::vec3(R, R, R)).translate(&pos))
+                    .material(Material::specular(hex_color(colors[i % colors.len()]), 0.1)),
             );
         }
         scene.add(
