@@ -42,11 +42,6 @@ impl Shape for MonomialSurface {
                 + 4. * 3. * t.powi(2) * coef2 * coef2;
             return -self.height * dy;
         };
-        let deriv3 = |t: f64| {
-            return 0.;
-            let dy = 3. * 2. * 2. * coef1 * coef2 + 4. * 3. * 2. * t * coef2 * coef2;
-            return -self.height * dy;
-        };
         let t_max;
         let maximize: bool = dist(t_min) < 0.0;
         if maximize {
@@ -58,8 +53,7 @@ impl Shape for MonomialSurface {
                 }
                 let der = deriv(cur_x);
                 let der2 = deriv2(cur_x);
-                let der3 = deriv3(cur_x);
-                cur_x -= 2. * der * der2 / (2. * der2.powi(2) - der * der3);
+                cur_x -= der / der2;
             }
             if dist(cur_x) < 0. && deriv(cur_x).abs() > 1e-4 {
                 println!("{}", deriv(cur_x).abs());
