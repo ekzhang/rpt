@@ -4,6 +4,7 @@ use image::{
 };
 use std::io::BufReader;
 
+use rand::{Rng, SeedableRng};
 use rpt::*;
 use std::fs::File;
 use std::process::Command;
@@ -31,13 +32,15 @@ fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     std::fs::create_dir_all("video")?;
 
-    const N: usize = 16;
+    const N: usize = 25;
+    let mut rng = rand::rngs::StdRng::seed_from_u64(123);
+
     let pos = (0..N)
         .map(|i| {
             glm::vec3(
-                (i / 4) as f64 / 4. - 0.375,
-                3. + ((i / 4 + i) % 2) as f64 * 1.0,
-                (i % 4) as f64 / 4. - 0.375,
+                (i / 5) as f64 / 5. - 0.375,
+                rng.gen_range(4., 6.),
+                (i % 5) as f64 / 5. - 0.375,
             )
         })
         .collect();
@@ -45,7 +48,7 @@ fn main() -> color_eyre::Result<()> {
         pos: pos,
         vel: vec![glm::vec3(0., 0., 0.); N],
     };
-    const R: f64 = 0.1;
+    const R: f64 = 0.15;
 
     let system = MarblesSystem { radius: R };
 
@@ -59,9 +62,9 @@ fn main() -> color_eyre::Result<()> {
                 Object::new(
                     sphere()
                         .scale(&glm::vec3(1.5, 1.5, 1.5))
-                        .translate(&glm::vec3(0.0, 5.0, 0.0))
+                        .translate(&glm::vec3(0.0, 5.0, 0.0)),
                 )
-                .material(Material::light(hex_color(0xFFFFFF), 15.0))
+                .material(Material::light(hex_color(0xFFFFFF), 15.0)),
             ));
         } else {
             scene.add(Light::Ambient(glm::vec3(0.01, 0.01, 0.01)));
@@ -78,6 +81,7 @@ fn main() -> color_eyre::Result<()> {
             if glm::length(&vec) < R {
                 pos = closest + glm::normalize(&vec) * R;
             }
+            pos.y = pos.y.max(R);
             scene.add(
                 Object::new(sphere().scale(&glm::vec3(R, R, R)).translate(&pos))
                     .material(Material::specular(hex_color(colors[i % colors.len()]), 0.1)),
@@ -118,7 +122,7 @@ fn main() -> color_eyre::Result<()> {
                 .render()
                 .save(format!("video/image_{}.png", frame))?;
         }
-        system.rk4_integrate(&mut cur_state, 1. / 24., 1. / 10000.);
+        system.rk4_integrate(&mut cur_state, 1. / 16., 1. / 10000.);
         println!("Frame {} finished", frame);
     }
     Command::new("ffmpeg")

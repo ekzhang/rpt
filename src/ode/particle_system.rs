@@ -70,7 +70,7 @@ pub struct MarblesSystem {
 
 impl ParticleSystem for MarblesSystem {
     fn time_derivative(&self, state: &ParticleState) -> ParticleState {
-        let mut acc = vec![glm::vec3(0.0, -0.5, 0.0); state.pos.len()];
+        let mut acc = vec![glm::vec3(0.0, -1., 0.0); state.pos.len()];
         for i in 0..state.pos.len() {
             for j in 0..i {
                 let dir = glm::normalize(&(state.pos[i] - state.pos[j]));
@@ -78,7 +78,9 @@ impl ParticleSystem for MarblesSystem {
                 if len < 2. * self.radius {
                     let force = -dir * 5. * ((2. * self.radius - len) / self.radius).powi(1);
                     acc[j] += force;
+                    acc[j] -= state.vel[j] * 0.5;
                     acc[i] -= force;
+                    acc[i] -= state.vel[i] * 0.5;
                 }
             }
         }
@@ -86,17 +88,32 @@ impl ParticleSystem for MarblesSystem {
             height: 2.,
             exp: 4.,
         };
+        // Surface physics
         for i in 0..state.pos.len() {
             let closest = surf.closest_point(&state.pos[i]);
             let vec = state.pos[i] - closest;
             let normal = glm::normalize(&vec);
             let ratio_intersecting = (self.radius - glm::length(&vec)) / self.radius;
             //            let normal_acc = normal * glm::dot(&acc[i], &normal);
-            let normal_vel = &state.vel[i].dot(&normal);
+            let normal_vel = state.vel[i].dot(&normal);
             if -0.1 < ratio_intersecting && ratio_intersecting < 0. {
                 acc[i] -= 30. * normal * normal_vel.powi(3);
             } else if ratio_intersecting >= 0. {
                 acc[i] += 100. * normal * ratio_intersecting.powi(1);
+            }
+        }
+        // Table physics
+        for i in 0..state.pos.len() {
+            let normal = glm::vec3(0., 1., 0.);
+            let ratio_intersecting = -state.pos[i].y;
+            let normal_vel = state.vel[i].dot(&normal);
+            if glm::length(&state.pos[i]) > 0.1 {
+                // Check that surface normal force does not act on this marble already
+                if -0.1 < ratio_intersecting && ratio_intersecting < 0. {
+                    acc[i] -= 5. * normal * normal_vel;
+                } else if ratio_intersecting >= 0. {
+                    acc[i] += 300000. * normal * ratio_intersecting.powi(1);
+                }
             }
         }
         for i in 0..state.pos.len() {
