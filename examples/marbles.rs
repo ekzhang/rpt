@@ -26,7 +26,7 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
     ))
 }
 
-const TEST: bool = true;
+const TEST: bool = false;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -54,7 +54,7 @@ fn main() -> color_eyre::Result<()> {
 
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_8k.hdr")?;
     let surface_shape = Arc::new(load_obj(File::open("examples/monomial.obj")?)?);
-    for frame in 0..360 {
+    for frame in 0..180 {
         let mut scene = Scene::new();
         if !TEST {
             scene.environment = Environment::Hdri(hdri.clone());
@@ -118,7 +118,7 @@ fn main() -> color_eyre::Result<()> {
                 .width(800)
                 .height(600)
                 .max_bounces(7)
-                .num_samples(200)
+                .num_samples(500)
                 .render()
                 .save(format!("video/image_{}.png", frame))?;
         }
