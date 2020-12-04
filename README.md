@@ -5,7 +5,9 @@
 
 This is a physically-based, CPU-only rendering engine written in Rust. It uses path tracing to generate realistic images of 3D scenes.
 
-![Demo renders](https://i.imgur.com/cFU8Zca.jpg)
+![Demo renders](https://i.imgur.com/3J6B3cx.jpg)
+
+![Demo video](https://i.imgur.com/7sBfyJb.gif)
 
 ## Features
 
@@ -109,7 +111,7 @@ This code can also be found in `examples/sphere.rs`. Note that the shadow is cor
 ![Fractal spheres](https://i.imgur.com/4aO9A2o.png)
 ![Rustacean](https://i.imgur.com/zZgl7jE.png)
 ![Wine glass](https://i.imgur.com/8EAmwuq.png)
-![Teapots](https://i.imgur.com/P3tnnaa.png)
+![Spheres](https://i.imgur.com/jyNpLN5.png)
 
 ## Acknowledgements
 
