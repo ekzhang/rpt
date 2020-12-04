@@ -26,7 +26,7 @@ fn load_hdr(url: &str) -> ImageResult<Hdri> {
     ))
 }
 
-const TEST: bool = false;
+const TEST: bool = true;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -53,7 +53,8 @@ fn main() -> color_eyre::Result<()> {
     let system = MarblesSystem { radius: R };
 
     let hdri = load_hdr("https://hdrihaven.com/files/hdris/ballroom_8k.hdr")?;
-    let surface_shape = Arc::new(load_obj(File::open("examples/monomial.obj")?)?);
+    let surface_shape =
+        Arc::new(load_obj(File::open("examples/monomial.obj")?)?.scale(&glm::vec3(1., 1., 1.)));
     for frame in 0..180 {
         let mut scene = Scene::new();
         if !TEST {
@@ -76,17 +77,19 @@ fn main() -> color_eyre::Result<()> {
         let surf = monomial_surface(2., 4.);
         for i in 0..N {
             let mut pos = cur_state.pos[i];
-            let closest = surf.closest_point(&pos);
+            let closest = surf.closest_point_precise(&pos);
             let vec = pos - closest;
-            if glm::length(&vec) < R {
-                pos = closest + glm::normalize(&vec) * R;
+            if glm::length(&vec) < R * 1.05 {
+                pos = closest + glm::normalize(&vec) * R * 1.05;
             }
-            pos.y = pos.y.max(R);
+            pos.y = pos.y.max(R - 0.06);
+            print!("{} ", pos.y);
             scene.add(
                 Object::new(sphere().scale(&glm::vec3(R, R, R)).translate(&pos))
                     .material(Material::specular(hex_color(colors[i % colors.len()]), 0.1)),
             );
         }
+        println!();
         scene.add(
             Object::new(polygon(&[
                 glm::vec3(20.0, -0.06, 20.0),

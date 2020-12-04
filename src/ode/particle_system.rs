@@ -105,7 +105,7 @@ impl ParticleSystem for MarblesSystem {
         // Table physics
         for i in 0..state.pos.len() {
             let normal = glm::vec3(0., 1., 0.);
-            let ratio_intersecting = -state.pos[i].y;
+            let ratio_intersecting = ((self.radius - 0.06) - state.pos[i].y) / self.radius;
             let normal_vel = state.vel[i].dot(&normal);
             if glm::length(&state.pos[i]) > 0.1 {
                 // Check that surface normal force does not act on this marble already

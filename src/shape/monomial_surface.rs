@@ -148,6 +148,31 @@ impl Physics for MonomialSurface {
 }
 
 impl MonomialSurface {
+    /// More precise and slower version of the closest_point function
+    pub fn closest_point_precise(&self, point: &glm::DVec3) -> glm::DVec3 {
+        if glm::length(point) < 1e-12 {
+            // Can't normalize in this case
+            return *point;
+        }
+        // Move to the 2d coordinate system
+        let px = point.x.hypot(point.z);
+        let py = point.y;
+        let pt = glm::vec2(px, py);
+        let mut res = (1e18, -1.);
+        for x in -10000..10001 {
+            let xf = x as f64 / 10000.;
+            let dist2 = glm::distance2(&pt, &glm::vec2(xf, self.height * xf.powi(4)));
+            if dist2 < res.0 {
+                res = (dist2, xf);
+            }
+        }
+        let xz = res.1 * glm::normalize(&glm::vec2(point.x, point.z));
+        return glm::vec3(
+            xz.x,
+            self.height * (xz.x.powi(2) + xz.y.powi(2)).powi(2),
+            xz.y,
+        );
+    }
     fn _closest_point_fast(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
             // Can't normalize in this case
