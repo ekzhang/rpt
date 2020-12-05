@@ -8,11 +8,11 @@ use crate::object::Object;
 use crate::shape::{Mesh, Triangle};
 
 fn parse_index(value: &str, len: usize) -> Option<usize> {
-    value.parse::<i32>().ok().and_then(|index| {
+    value.parse::<i32>().ok().map(|index| {
         if index > 0 {
-            Some((index - 1) as usize)
+            (index - 1) as usize
         } else {
-            Some((len as i32 + index) as usize)
+            (len as i32 + index) as usize
         }
     })
 }
@@ -32,7 +32,7 @@ pub fn load_obj(file: File) -> io::Result<Mesh> {
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line?.trim().to_string();
-        if line.starts_with("#") || line.is_empty() {
+        if line.starts_with('#') || line.is_empty() {
             continue;
         }
         let tokens: Vec<&str> = line.split_ascii_whitespace().collect();
@@ -94,7 +94,7 @@ pub fn load_obj_with_mtl(obj_file: File, mtl_file: File) -> io::Result<Vec<Objec
     let reader = BufReader::new(obj_file);
     for line in reader.lines() {
         let line = line?.trim().to_string();
-        if line.starts_with("#") || line.is_empty() {
+        if line.starts_with('#') || line.is_empty() {
             continue;
         }
         let tokens: Vec<&str> = line.split_ascii_whitespace().collect();
@@ -127,10 +127,9 @@ pub fn load_obj_with_mtl(obj_file: File, mtl_file: File) -> io::Result<Vec<Objec
                                 .material(current_material),
                         );
                     }
-                    current_material = *materials.get(tokens[1]).ok_or(invalid_data(format!(
-                        "Could not found `usemtl {}` in library",
-                        tokens[1]
-                    )))?;
+                    current_material = *materials.get(tokens[1]).ok_or_else(|| {
+                        invalid_data(format!("Could not found `usemtl {}` in library", tokens[1]))
+                    })?;
                     last_usemtl = Some(tokens[1].to_owned());
                 }
             }
@@ -170,12 +169,12 @@ fn parse_obj_face(
     let mut vni = Vec::new();
     for vertex in &line[1..] {
         let args: Vec<_> = vertex
-            .split("/")
+            .split('/')
             .chain(std::iter::repeat(""))
             .take(3)
             .collect();
         let vert_index = parse_index(args[0], vertices.len());
-        vi.push(vert_index.ok_or(invalid_data("Invalid vertex index"))?);
+        vi.push(vert_index.ok_or_else(|| invalid_data("Invalid vertex index"))?);
         vni.push(parse_index(args[2], normals.len()));
     }
     let mut triangles = Vec::new();
@@ -206,7 +205,7 @@ fn load_mtl(file: File) -> io::Result<HashMap<String, Material>> {
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line?.trim().to_string();
-        if line.starts_with("#") || line.is_empty() {
+        if line.starts_with('#') || line.is_empty() {
             continue;
         }
         let tokens: Vec<&str> = line.split_ascii_whitespace().collect();
@@ -215,9 +214,11 @@ fn load_mtl(file: File) -> io::Result<HashMap<String, Material>> {
             current = Some(name.clone());
             materials.entry(name).or_default();
         } else {
-            let current = current.as_ref().ok_or(invalid_data(
-                "Material was not specified with `newmtl` before properties were added",
-            ))?;
+            let current = current.as_ref().ok_or_else(|| {
+                invalid_data(
+                    "Material was not specified with `newmtl` before properties were added",
+                )
+            })?;
             let mat = materials.get_mut(current).unwrap();
             // Best-effort conversion from Ka/Kd/Ks material to physically-based material
             match tokens[0] {
@@ -293,24 +294,24 @@ fn load_stl_ascii(file: File) -> io::Result<Mesh> {
         let vn: Vec<_> = line?
             .trim()
             .strip_prefix("facet normal ")
-            .ok_or(invalid_data("Malformed STL file: expected `facet normal`"))?
+            .ok_or_else(|| invalid_data("Malformed STL file: expected `facet normal`"))?
             .split_ascii_whitespace()
             .map(|token| token.parse::<f64>().expect("Invalid facet normal"))
             .collect();
         let vn = glm::vec3(vn[0], vn[1], vn[2]);
         lines.next().unwrap()?; // "outer loop"
         let mut vs: [glm::DVec3; 3] = Default::default();
-        for i in 0..3 {
+        for vertex in &mut vs {
             let v: Vec<_> = lines
                 .next()
                 .unwrap()?
                 .trim()
                 .strip_prefix("vertex ")
-                .ok_or(invalid_data("Malformed STL file: expected `vertex`"))?
+                .ok_or_else(|| invalid_data("Malformed STL file: expected `vertex`"))?
                 .split_ascii_whitespace()
                 .map(|token| token.parse::<f64>().expect("Invalid vertex"))
                 .collect();
-            vs[i] = glm::vec3(v[0], v[1], v[2]);
+            *vertex = glm::vec3(v[0], v[1], v[2]);
         }
         lines.next().unwrap()?; // "endloop"
         lines.next().unwrap()?; // "endfacet"

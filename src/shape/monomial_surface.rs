@@ -24,7 +24,7 @@ impl Shape for MonomialSurface {
             let x = ray.origin.x + t * ray.dir.x;
             let y = ray.origin.y + t * ray.dir.y;
             let z = ray.origin.z + t * ray.dir.z;
-            return y - self.height * (x * x + z * z).powi(2);
+            y - self.height * (x * x + z * z).powi(2)
         };
         let coef0 = ray.origin.x.powi(2) + ray.origin.z.powi(2);
         let coef1 = 2. * (ray.origin.x * ray.dir.x + ray.origin.z * ray.dir.z);
@@ -34,13 +34,13 @@ impl Shape for MonomialSurface {
                 + 2. * t * (coef1 * coef1 + 2. * coef0 * coef2)
                 + 3. * t.powi(2) * 2. * coef1 * coef2
                 + 4. * t.powi(3) * coef2 * coef2;
-            return ray.dir.y - self.height * dy;
+            ray.dir.y - self.height * dy
         };
         let deriv2 = |t: f64| {
             let dy = 2. * (coef1 * coef1 + 2. * coef0 * coef2)
                 + 3. * 2. * t * 2. * coef1 * coef2
                 + 4. * 3. * t.powi(2) * coef2 * coef2;
-            return -self.height * dy;
+            -self.height * dy
         };
         let t_max;
         let maximize: bool = dist(t_min) < 0.0;
@@ -139,11 +139,11 @@ impl Physics for MonomialSurface {
             }
         }
         let xz = res.1 * glm::normalize(&glm::vec2(point.x, point.z));
-        return glm::vec3(
+        glm::vec3(
             xz.x,
             self.height * (xz.x.powi(2) + xz.y.powi(2)).powi(2),
             xz.y,
-        );
+        )
     }
 }
 
@@ -167,11 +167,11 @@ impl MonomialSurface {
             }
         }
         let xz = res.1 * glm::normalize(&glm::vec2(point.x, point.z));
-        return glm::vec3(
+        glm::vec3(
             xz.x,
             self.height * (xz.x.powi(2) + xz.y.powi(2)).powi(2),
             xz.y,
-        );
+        )
     }
     fn _closest_point_fast(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
@@ -209,11 +209,11 @@ impl MonomialSurface {
             }
         }
         let xz = l * glm::normalize(&glm::vec2(point.x, point.z));
-        return glm::vec3(
+        glm::vec3(
             xz.x,
             self.height * (xz.x.powi(2) + xz.y.powi(2)).powi(2),
             xz.y,
-        );
+        )
     }
 }
 

@@ -105,6 +105,7 @@ impl Material {
     }
 }
 
+#[allow(clippy::many_single_char_names)]
 impl Material {
     /// Bidirectional scattering distribution function
     ///
@@ -264,28 +265,26 @@ impl Material {
             // Specular component
             let h = beckmann(rng);
             -glm::reflect_vec(wo, &h)
+        } else if !self.transparent {
+            // Diffuse component (Lambertian)
+            // Simple cosine-sampling using Malley's method
+            let [x, y]: [f64; 2] = rng.sample(UnitDisc);
+            let z = (1.0_f64 - x * x - y * y).sqrt();
+            local_to_world(n) * glm::vec3(x, y, z)
         } else {
-            if !self.transparent {
-                // Diffuse component (Lambertian)
-                // Simple cosine-sampling using Malley's method
-                let [x, y]: [f64; 2] = rng.sample(UnitDisc);
-                let z = (1.0_f64 - x * x - y * y).sqrt();
-                local_to_world(n) * glm::vec3(x, y, z)
-            } else {
-                // Transmitted component
-                let h = beckmann(rng);
-                let cos_to = h.dot(wo);
-                let wo_perp = wo - h * cos_to;
-                let wi_perp = -wo_perp / eta_t;
-                let sin2_ti = wi_perp.magnitude_squared();
-                if sin2_ti > 1.0 {
-                    // This angle doesn't yield any transmittence to wo,
-                    // due to total internal reflection
-                    return None;
-                }
-                let cos_ti = (1.0 - sin2_ti).sqrt();
-                -cos_to.signum() * cos_ti * h + wi_perp
+            // Transmitted component
+            let h = beckmann(rng);
+            let cos_to = h.dot(wo);
+            let wo_perp = wo - h * cos_to;
+            let wi_perp = -wo_perp / eta_t;
+            let sin2_ti = wi_perp.magnitude_squared();
+            if sin2_ti > 1.0 {
+                // This angle doesn't yield any transmittence to wo,
+                // due to total internal reflection
+                return None;
             }
+            let cos_ti = (1.0 - sin2_ti).sqrt();
+            -cos_to.signum() * cos_ti * h + wi_perp
         };
 
         // Multiple importance sampling - add up total probability

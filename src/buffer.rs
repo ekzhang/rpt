@@ -67,7 +67,7 @@ impl Buffer {
             }
             // Sample variance: n - 1 degrees of freedom
             variance += sum_of_squares / (pix_samples.len() as f64 - 1.0);
-            count = count + 1.0;
+            count += 1.0;
         }
         variance / count
     }

@@ -7,6 +7,7 @@ use crate::kdtree::{Bounded, BoundingBox};
 /// A unit sphere centered at the origin
 pub struct Sphere;
 
+#[allow(clippy::many_single_char_names)]
 impl Shape for Sphere {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         // Translated directly from the GLOO source code, assuming radius = 1

@@ -10,7 +10,7 @@ const SRGB_GAMMA: f64 = 2.2;
 pub fn hex_color(x: u32) -> Color {
     let r = ((x >> 16) & 0xff) as f64 / 255.0;
     let g = ((x >> 8) & 0xff) as f64 / 255.0;
-    let b = ((x >> 0) & 0xff) as f64 / 255.0;
+    let b = (x & 0xff) as f64 / 255.0;
     glm::vec3(r.powf(SRGB_GAMMA), g.powf(SRGB_GAMMA), b.powf(SRGB_GAMMA))
 }
 

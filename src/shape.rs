@@ -63,7 +63,7 @@ pub struct Ray {
 impl Ray {
     /// Evaluates the ray at a given value of the parameter
     pub fn at(&self, time: f64) -> glm::DVec3 {
-        return self.origin + time * self.dir;
+        self.origin + time * self.dir
     }
 
     /// Apply a homogeneous transformation to the ray (not normalizing direction)

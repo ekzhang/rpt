@@ -146,6 +146,7 @@ impl<T: Bounded> KdTree<T> {
     /// Intersect the current ray with a given subtree.
     ///
     /// Guarantee: we always find the closest intersection in the current kd-cell, if any.
+    #[allow(clippy::float_cmp)]
     fn intersect_subtree(
         &self,
         node: &KdNode,
@@ -253,11 +254,11 @@ fn construct<T: Bounded>(objects: &[T], indices: Vec<usize>) -> Box<KdNode> {
 
     let partition_score = |dim: usize, value: f64| {
         let (mut left, mut right) = (0usize, 0usize);
-        for i in 0..indices.len() {
-            if bboxs[i].p_min[dim] <= value {
+        for bbox in &bboxs {
+            if bbox.p_min[dim] <= value {
                 left += 1;
             }
-            if bboxs[i].p_max[dim] >= value {
+            if bbox.p_max[dim] >= value {
                 right += 1;
             }
         }
@@ -300,10 +301,8 @@ fn construct<T: Bounded>(objects: &[T], indices: Vec<usize>) -> Box<KdNode> {
             if sy < threshold {
                 split_dir = 1;
             }
-        } else {
-            if sz < threshold {
-                split_dir = 2;
-            }
+        } else if sz < threshold {
+            split_dir = 2;
         }
 
         // Then, try any split direction, with best possible score

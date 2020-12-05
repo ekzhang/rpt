@@ -45,7 +45,7 @@ fn main() -> color_eyre::Result<()> {
         })
         .collect();
     let mut cur_state = ParticleState {
-        pos: pos,
+        pos,
         vel: vec![glm::vec3(0., 0., 0.); N],
     };
     const R: f64 = 0.15;

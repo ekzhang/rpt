@@ -45,10 +45,10 @@ pub struct SolidGravitySystem;
 impl ParticleSystem for SolidGravitySystem {
     fn time_derivative(&self, state: &ParticleState) -> ParticleState {
         let mut acc = vec![glm::vec3(0.0, 0.0, 0.0); state.pos.len()];
-        for i in 0..state.pos.len() {
-            for j in 0..i {
-                let dir = glm::normalize(&(state.pos[i] - state.pos[j]));
-                let len = glm::length(&(state.pos[i] - state.pos[j]));
+        for (i, pos_i) in state.pos.iter().enumerate() {
+            for (j, pos_j) in state.pos.iter().take(i).enumerate() {
+                let dir = glm::normalize(&(pos_i - pos_j));
+                let len = glm::length(&(pos_i - pos_j));
                 let force = dir * (len.powi(-2) - 0.0001 * len.powi(-5));
                 acc[j] += force;
                 acc[i] -= force;
@@ -71,10 +71,10 @@ pub struct MarblesSystem {
 impl ParticleSystem for MarblesSystem {
     fn time_derivative(&self, state: &ParticleState) -> ParticleState {
         let mut acc = vec![glm::vec3(0.0, -1., 0.0); state.pos.len()];
-        for i in 0..state.pos.len() {
-            for j in 0..i {
-                let dir = glm::normalize(&(state.pos[i] - state.pos[j]));
-                let len = glm::length(&(state.pos[i] - state.pos[j]));
+        for (i, pos_i) in state.pos.iter().enumerate() {
+            for (j, pos_j) in state.pos.iter().take(i).enumerate() {
+                let dir = glm::normalize(&(pos_i - pos_j));
+                let len = glm::length(&(pos_i - pos_j));
                 if len < 2. * self.radius {
                     let force = -dir * 5. * ((2. * self.radius - len) / self.radius).powi(1);
                     acc[j] += force;
@@ -89,9 +89,9 @@ impl ParticleSystem for MarblesSystem {
             exp: 4.,
         };
         // Surface physics
-        for i in 0..state.pos.len() {
-            let closest = surf.closest_point(&state.pos[i]);
-            let vec = state.pos[i] - closest;
+        for (i, pos_i) in state.pos.iter().enumerate() {
+            let closest = surf.closest_point(pos_i);
+            let vec = pos_i - closest;
             let normal = glm::normalize(&vec);
             let ratio_intersecting = (self.radius - glm::length(&vec)) / self.radius;
             //            let normal_acc = normal * glm::dot(&acc[i], &normal);
@@ -103,11 +103,11 @@ impl ParticleSystem for MarblesSystem {
             }
         }
         // Table physics
-        for i in 0..state.pos.len() {
+        for (i, pos_i) in state.pos.iter().enumerate() {
             let normal = glm::vec3(0., 1., 0.);
-            let ratio_intersecting = ((self.radius - 0.06) - state.pos[i].y) / self.radius;
+            let ratio_intersecting = ((self.radius - 0.06) - pos_i.y) / self.radius;
             let normal_vel = state.vel[i].dot(&normal);
-            if glm::length(&state.pos[i]) > 0.1 {
+            if glm::length(pos_i) > 0.1 {
                 // Check that surface normal force does not act on this marble already
                 if -0.1 < ratio_intersecting && ratio_intersecting < 0. {
                     acc[i] -= 20. * normal * normal_vel;
@@ -116,9 +116,9 @@ impl ParticleSystem for MarblesSystem {
                 }
             }
         }
-        for i in 0..state.pos.len() {
+        for (i, vel_i) in state.vel.iter().enumerate() {
             //introduce "air resistance"
-            acc[i] -= state.vel[i] / 5.;
+            acc[i] -= vel_i / 5.;
         }
 
         ParticleState {

@@ -2,17 +2,13 @@ use rpt::*;
 
 fn gen(
     spheres: &mut [Vec<Box<dyn Bounded>>],
-    x: f64,
-    y: f64,
-    z: f64,
+    p: glm::DVec3,
     rad: f64,
     depth: usize,
     last_dir: Option<usize>,
 ) {
     spheres[depth].push(Box::new(
-        sphere()
-            .scale(&glm::vec3(rad, rad, rad))
-            .translate(&glm::vec3(x, y, z)),
+        sphere().scale(&glm::vec3(rad, rad, rad)).translate(&p),
     ));
     if depth == spheres.len() - 1 {
         return;
@@ -25,9 +21,7 @@ fn gen(
         if last_dir.is_none() || i != (last_dir.unwrap() ^ 1) {
             gen(
                 spheres,
-                x + dx[i],
-                y + dy[i],
-                z + dz[i],
+                p + glm::vec3(dx[i], dy[i], dz[i]),
                 rad * 2.0 / 5.0,
                 depth + 1,
                 Some(i),
@@ -42,7 +36,7 @@ fn main() -> color_eyre::Result<()> {
     let colors = [0x264653, 0x2A9D8F, 0xE9C46A, 0xF4A261, 0xE76F51];
     let mut spheres: Vec<_> = colors.iter().map(|_| Vec::new()).collect();
 
-    gen(&mut spheres, 0.0, 0.0, 0.0, 1.0, 0, None);
+    gen(&mut spheres, glm::vec3(0.0, 0.0, 0.0), 1.0, 0, None);
 
     let mut scene = Scene::new();
     for (i, sphere_group) in spheres.into_iter().enumerate() {

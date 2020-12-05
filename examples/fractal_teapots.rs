@@ -8,9 +8,7 @@ use rpt::*;
 fn gen(
     obj: Arc<Mesh>,
     spheres: &mut [Vec<Box<dyn Bounded>>],
-    x: f64,
-    y: f64,
-    z: f64,
+    p: glm::DVec3,
     rad: f64,
     depth: usize,
     last_dir: Option<usize>,
@@ -19,7 +17,7 @@ fn gen(
         Arc::clone(&obj)
             .scale(&glm::vec3(0.5, 0.5, 0.5))
             .scale(&glm::vec3(rad, rad, rad))
-            .translate(&glm::vec3(x, y, z)),
+            .translate(&p),
     ));
     if depth == spheres.len() - 1 {
         return;
@@ -33,9 +31,7 @@ fn gen(
             gen(
                 Arc::clone(&obj),
                 spheres,
-                x + dx[i],
-                y + dy[i],
-                z + dz[i],
+                p + glm::vec3(dx[i], dy[i], dz[i]),
                 rad * 2.0 / 5.0,
                 depth + 1,
                 Some(i),
@@ -51,7 +47,7 @@ fn main() -> color_eyre::Result<()> {
     let mut spheres: Vec<_> = colors.iter().map(|_| Vec::new()).collect();
 
     let teapot = Arc::new(load_obj(File::open("examples/teapot.obj")?)?);
-    gen(teapot, &mut spheres, 0.0, 0.0, 0.0, 1.0, 0, None);
+    gen(teapot, &mut spheres, glm::vec3(0.0, 0.0, 0.0), 1.0, 0, None);
 
     let mut scene = Scene::new();
     for (i, sphere_group) in spheres.into_iter().enumerate() {
