@@ -3,11 +3,10 @@
 [![Latest Version](https://img.shields.io/crates/v/rpt.svg)](https://crates.io/crates/rpt)
 [![API Documentation](https://docs.rs/rpt/badge.svg)](https://docs.rs/rpt)
 
-This is a physically-based, CPU-only rendering engine written in Rust. It uses path tracing to generate realistic images of 3D scenes.
+This is a physically based, CPU-only rendering engine written in Rust. It uses path tracing to generate realistic images of 3D scenes.
 
 ![Demo renders](https://i.imgur.com/3J6B3cx.jpg)
-
-![Demo video](https://i.imgur.com/7sBfyJb.gif)
+![Demo video](https://i.imgur.com/UTS3Yo8.gif)
 
 ## Features
 
