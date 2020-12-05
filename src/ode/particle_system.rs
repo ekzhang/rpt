@@ -1,5 +1,5 @@
 use super::ParticleState;
-use crate::{MonomialSurface, Physics};
+use crate::shape::MonomialSurface;
 
 /// A trait that represents a system formulating some physical laws
 pub trait ParticleSystem {

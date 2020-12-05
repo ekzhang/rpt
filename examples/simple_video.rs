@@ -1,5 +1,6 @@
-use rpt::*;
 use std::process::Command;
+
+use rpt::*;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;

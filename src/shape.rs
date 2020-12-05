@@ -24,12 +24,6 @@ pub trait Shape: Send + Sync {
     fn sample(&self, target: &glm::DVec3, rng: &mut StdRng) -> (glm::DVec3, glm::DVec3, f64);
 }
 
-/// Represents a physical surface, which can compute the nearest point on that shape to a given point
-pub trait Physics: Shape {
-    /// Find the closest point to a given point
-    fn closest_point(&self, point: &glm::DVec3) -> glm::DVec3;
-}
-
 impl<T: Shape + ?Sized> Shape for Box<T> {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
         self.as_ref().intersect(ray, t_min, record)

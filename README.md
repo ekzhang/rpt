@@ -41,12 +41,9 @@ cargo test
 
 To use `rpt` as a library, add the following to your `Cargo.toml`:
 
-<sub>(The [`nalgebra-glm`](https://www.nalgebra.org/) library is required for vector math.)</sub>
-
 ```toml
 [dependencies]
 rpt = "0.1"
-glm = { version = "0.8", package = "nalgebra-glm" }
 ```
 
 Here's a simple scene that demonstrates the basics of the API.

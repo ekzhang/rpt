@@ -3,6 +3,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub use glm;
+pub use image;
+
 pub use buffer::*;
 pub use camera::*;
 pub use color::*;

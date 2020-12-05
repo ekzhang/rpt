@@ -2,13 +2,13 @@ use image::{
     codecs::hdr::{HdrDecoder, HdrMetadata},
     ImageResult, Rgb,
 };
-use std::io::BufReader;
-
 use rand::{Rng, SeedableRng};
-use rpt::*;
 use std::fs::File;
+use std::io::BufReader;
 use std::process::Command;
 use std::sync::Arc;
+
+use rpt::*;
 
 fn rgb_to_color(rgb: Rgb<f32>) -> Color {
     glm::vec3(rgb.0[0] as f64, rgb.0[1] as f64, rgb.0[2] as f64)

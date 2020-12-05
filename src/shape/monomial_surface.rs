@@ -1,7 +1,7 @@
 use rand::{rngs::StdRng, Rng};
 use rand_distr::UnitCircle;
 
-use super::{HitRecord, Physics, Ray, Shape};
+use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
 /// Represents a glass-shaped surface with height and exp parameters
@@ -120,8 +120,9 @@ impl Shape for MonomialSurface {
     }
 }
 
-impl Physics for MonomialSurface {
-    fn closest_point(&self, point: &glm::DVec3) -> glm::DVec3 {
+impl MonomialSurface {
+    /// Estimates the closest point on the surface to a given point
+    pub fn closest_point(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
             // Can't normalize in this case
             return *point;
@@ -145,9 +146,7 @@ impl Physics for MonomialSurface {
             xz.y,
         )
     }
-}
 
-impl MonomialSurface {
     /// More precise and slower version of the closest_point function
     pub fn closest_point_precise(&self, point: &glm::DVec3) -> glm::DVec3 {
         if glm::length(point) < 1e-12 {
@@ -167,48 +166,6 @@ impl MonomialSurface {
             }
         }
         let xz = res.1 * glm::normalize(&glm::vec2(point.x, point.z));
-        glm::vec3(
-            xz.x,
-            self.height * (xz.x.powi(2) + xz.y.powi(2)).powi(2),
-            xz.y,
-        )
-    }
-    fn _closest_point_fast(&self, point: &glm::DVec3) -> glm::DVec3 {
-        if glm::length(point) < 1e-12 {
-            // Can't normalize in this case
-            return *point;
-        }
-        // Move to the 2d coordinate system
-        let px = point.x.hypot(point.z);
-        let py = point.y;
-        // We want to find a point at which tangent is perpendicular to the vector to our point
-        // Do it with binary search
-        let mut l: f64;
-        let mut r: f64;
-        // There can be two such points, so we must choose one
-        if px <= 0. {
-            l = -1.;
-            r = 0.;
-        } else {
-            l = 0.;
-            r = 1.;
-        }
-        let tang = glm::vec2(l, 4. * self.height * l.powi(3));
-        let vec = glm::vec2(px - l, py - self.height * l.powi(4));
-        let tangr = glm::vec2(r, 4. * self.height * r.powi(3));
-        let vecr = glm::vec2(px - r, py - self.height * r.powi(4));
-        assert!(tang.dot(&vec).signum() != tangr.dot(&vecr).signum());
-        for _ in 0..50 {
-            let m: f64 = (l + r) / 2.;
-            let tang = glm::vec2(m, 4. * self.height * m.powi(3));
-            let vec = glm::vec2(px - m, py - self.height * m.powi(4));
-            if tang.dot(&vec) < 0.0 {
-                r = m;
-            } else {
-                l = m;
-            }
-        }
-        let xz = l * glm::normalize(&glm::vec2(point.x, point.z));
         glm::vec3(
             xz.x,
             self.height * (xz.x.powi(2) + xz.y.powi(2)).powi(2),
