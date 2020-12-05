@@ -110,7 +110,7 @@ impl ParticleSystem for MarblesSystem {
             if glm::length(&state.pos[i]) > 0.1 {
                 // Check that surface normal force does not act on this marble already
                 if -0.1 < ratio_intersecting && ratio_intersecting < 0. {
-                    acc[i] -= 5. * normal * normal_vel;
+                    acc[i] -= 20. * normal * normal_vel;
                 } else if ratio_intersecting >= 0. {
                     acc[i] += 300000. * normal * ratio_intersecting.powi(1);
                 }
