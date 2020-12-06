@@ -7,6 +7,8 @@ use crate::kdtree::{Bounded, BoundingBox};
 /// Represents a glass-shaped surface with height and exp parameters
 ///
 /// Points satisfy the relation y = height * sqrt(x^2 + z^2)^exp, x^2 + z^2 <= 1.
+///
+/// Normals and other things probably can't be generalized, so they work only for exp=4 for now
 pub struct MonomialSurface {
     /// The height of the surface
     pub height: f64,
@@ -88,7 +90,6 @@ impl Shape for MonomialSurface {
         }
         record.time = r;
 
-        // TODO: this is valid only for exp = 4, not sure how to do it in general case
         record.normal = glm::normalize(&glm::vec3(
             self.height * 4.0 * pos.x * (pos.x * pos.x + pos.z * pos.z),
             -1.0,
@@ -212,7 +213,6 @@ mod tests {
                 }
             }
         };
-        let _ = surf.closest_point(&glm::vec3(0., 0., 0.));
         test_xz(0.0, 1.0);
         test_xz(0.0, -1.0);
         test_xz(0.23234, 0.723423);

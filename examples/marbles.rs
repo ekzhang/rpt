@@ -83,13 +83,11 @@ fn main() -> color_eyre::Result<()> {
                 pos = closest + glm::normalize(&vec) * R * 1.05;
             }
             pos.y = pos.y.max(R - 0.06);
-            print!("{} ", pos.y);
             scene.add(
                 Object::new(sphere().scale(&glm::vec3(R, R, R)).translate(&pos))
                     .material(Material::specular(hex_color(colors[i % colors.len()]), 0.1)),
             );
         }
-        println!();
         scene.add(
             Object::new(polygon(&[
                 glm::vec3(20.0, -0.06, 20.0),
