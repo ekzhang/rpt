@@ -10,26 +10,28 @@ pub struct Sphere;
 #[allow(clippy::many_single_char_names)]
 impl Shape for Sphere {
     fn intersect(&self, ray: &Ray, t_min: f64, record: &mut HitRecord) -> bool {
-        // Translated directly from the GLOO source code, assuming radius = 1
+        // Based on the GLOO source code, assuming radius = 1
         let a = glm::length2(&ray.dir);
-        let b = 2.0 * glm::dot(&ray.dir, &ray.origin);
+        let b = glm::dot(&ray.dir, &ray.origin);
         let c = glm::length2(&ray.origin) - 1.0;
 
-        let d = b * b - 4.0 * a * c;
+        let d = b * b - a * c;
         if d.is_sign_negative() {
             return false;
         }
 
         let d = d.sqrt();
-        let t_plus = (-b + d) / (2.0 * a);
-        let t_minus = (-b - d) / (2.0 * a);
-        let t = if t_minus < t_min {
-            if t_plus < t_min {
-                return false;
+        let t = {
+            let t_minus = (-b - d) / a;
+            if t_minus < t_min {
+                let t_plus = (-b + d) / a;
+                if t_plus < t_min {
+                    return false;
+                }
+                t_plus
+            } else {
+                t_minus
             }
-            t_plus
-        } else {
-            t_minus
         };
 
         if t < record.time {
