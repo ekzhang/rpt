@@ -42,7 +42,7 @@ To use `rpt` as a library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rpt = "0.1"
+rpt = "0.2"
 ```
 
 Here's a simple scene that demonstrates the basics of the API.
