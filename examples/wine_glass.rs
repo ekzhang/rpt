@@ -1,6 +1,6 @@
 use image::{
     codecs::hdr::{HdrDecoder, HdrMetadata},
-    ImageResult, Rgb,
+    Rgb,
 };
 use std::fs::File;
 use std::io::BufReader;
@@ -12,8 +12,8 @@ fn rgb_to_color(rgb: Rgb<f32>) -> Color {
     glm::vec3(rgb.0[0] as f64, rgb.0[1] as f64, rgb.0[2] as f64)
 }
 
-fn load_hdr(url: &str) -> ImageResult<Hdri> {
-    let reader = ureq::get(url).call().into_reader();
+fn load_hdr(url: &str) -> color_eyre::Result<Hdri> {
+    let reader = ureq::get(url).call()?.into_reader();
     let decoder = HdrDecoder::new(BufReader::new(reader))?;
     let HdrMetadata { width, height, .. } = decoder.metadata();
     let pix = decoder.read_image_hdr()?;

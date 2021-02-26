@@ -134,8 +134,8 @@ impl<'a> Renderer<'a> {
         let yn = ((2 * (self.height - y) - 1) as f64 - self.height as f64) / dim;
         let mut color = glm::vec3(0.0, 0.0, 0.0);
         for _ in 0..iterations {
-            let dx = rng.gen_range(-1.0 / dim, 1.0 / dim);
-            let dy = rng.gen_range(-1.0 / dim, 1.0 / dim);
+            let dx = rng.gen_range((-1.0 / dim)..(1.0 / dim));
+            let dy = rng.gen_range((-1.0 / dim)..(1.0 / dim));
             color += self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy, rng), 0, rng);
         }
         color / f64::from(iterations) * 2.0_f64.powf(self.exposure_value)

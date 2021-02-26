@@ -9,7 +9,7 @@ use rpt::*;
 fn load_dragon() -> color_eyre::Result<Mesh> {
     let mut buf = Vec::new();
     ureq::get("http://casual-effects.com/g3d/data10/research/model/dragon/dragon.zip")
-        .call()
+        .call()?
         .into_reader()
         .read_to_end(&mut buf)?;
     let mut archive = ZipArchive::new(Cursor::new(buf))?;

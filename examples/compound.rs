@@ -2,6 +2,7 @@
 
 use rpt::*;
 
+#[allow(clippy::many_single_char_names)]
 fn lamp(x: f64, y: f64, z: f64, r: f64, e: f64) -> Light {
     Light::Object(
         Object::new(
