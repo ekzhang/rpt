@@ -72,8 +72,6 @@ impl Ray {
 }
 
 /// Record of when a hit occurs, and the corresponding normal
-///
-/// TODO: Look into adding more information, such as (u, v) texels
 pub struct HitRecord {
     /// The time at which the hit occurs (see `Ray`)
     pub time: f64,
@@ -99,6 +97,7 @@ impl HitRecord {
 }
 
 /// A shape that has been composed with a transformation
+#[derive(Copy, Clone)]
 pub struct Transformed<T> {
     shape: T,
     transform: glm::DMat4,

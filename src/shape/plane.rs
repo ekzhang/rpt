@@ -3,6 +3,7 @@ use rand::rngs::StdRng;
 use super::{HitRecord, Ray, Shape};
 
 /// A plane represented by the linear equation x • normal = value
+#[derive(Copy, Clone)]
 pub struct Plane {
     /// The normal vector
     pub normal: glm::DVec3,

@@ -5,6 +5,7 @@ use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
 /// A unit sphere centered at the origin
+#[derive(Copy, Clone)]
 pub struct Sphere;
 
 #[allow(clippy::many_single_char_names)]

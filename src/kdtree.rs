@@ -96,6 +96,7 @@ impl BoundingBox {
 /// [fogleman/pt](https://github.com/fogleman/pt/blob/master/pt/tree.go).
 /// Parts of the construction algorithm were also taken from PBRT, which helped
 /// optimize the code by a few orders of magnitude.
+#[derive(Clone)]
 pub struct KdTree<T> {
     root: Box<KdNode>,
     objects: Vec<T>,
@@ -222,6 +223,7 @@ impl<T: Bounded> KdTree<T> {
     }
 }
 
+#[derive(Clone)]
 enum KdNode {
     SplitX(f64, Box<KdNode>, Box<KdNode>),
     SplitY(f64, Box<KdNode>, Box<KdNode>),

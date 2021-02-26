@@ -4,6 +4,7 @@ use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox, KdTree};
 
 /// A triangle with three vertices and three normals
+#[derive(Copy, Clone)]
 pub struct Triangle {
     /// The first vertex
     pub v1: glm::DVec3,

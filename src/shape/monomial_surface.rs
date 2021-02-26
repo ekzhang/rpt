@@ -9,6 +9,7 @@ use crate::kdtree::{Bounded, BoundingBox};
 /// Points satisfy the relation y = height * sqrt(x^2 + z^2)^exp, x^2 + z^2 <= 1.
 ///
 /// Normals and other things probably can't be generalized, so they work only for exp=4 for now
+#[derive(Copy, Clone)]
 pub struct MonomialSurface {
     /// The height of the surface
     pub height: f64,

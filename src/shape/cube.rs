@@ -4,6 +4,7 @@ use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox};
 
 /// A unit cube centered at the origin
+#[derive(Copy, Clone)]
 pub struct Cube;
 
 impl Bounded for Cube {
