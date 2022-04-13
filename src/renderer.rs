@@ -10,6 +10,7 @@ use crate::material::Material;
 use crate::object::Object;
 use crate::scene::Scene;
 use crate::shape::{HitRecord, Ray};
+use kd_tree::{ItemAndDistance, KdPoint, KdTree};
 
 const EPSILON: f64 = 1e-12;
 const FIREFLY_CLAMP: f64 = 100.0;
@@ -217,5 +218,239 @@ impl<'a> Renderer<'a> {
             }
         }
         Some((h, hit?))
+    }
+}
+
+struct Photon {
+    pub position: glm::DVec3,
+    pub direction: glm::DVec3,
+    pub power: Color,
+}
+
+impl KdPoint for Photon {
+    type Scalar = f64;
+    type Dim = typenum::U3;
+    fn at(&self, k: usize) -> f64 {
+        self.position[k]
+    }
+}
+
+static CLOSEST_N_PHOTONS: usize = 100;
+
+impl<'a> Renderer<'a> {
+    /// renders an image using photon mapping
+    pub fn photon_map_render(&self, photon_count: usize, iterations: u32) -> RgbImage {
+        for light in self.scene.lights.iter() {
+            match light {
+                Light::Object(_) => {}
+                _ => {
+                    panic!("Only object lights are supported for photon mapping");
+                }
+            }
+        }
+
+        println!("Shooting photons");
+        let mut rng = StdRng::from_entropy();
+        let mut photon_list = Vec::new();
+        for _ in 0..photon_count {
+            photon_list.extend(self.shoot_photon(&mut rng));
+        }
+        println!("Building kdtree");
+        let photon_map = KdTree::build_by(photon_list, |a, b, k| {
+            a.position[k].partial_cmp(&b.position[k]).unwrap()
+        });
+
+        println!("Tracing rays");
+        let mut buffer = Buffer::new(self.width, self.height, self.filter);
+        let count = std::sync::atomic::AtomicUsize::new(0);
+        let colors: Vec<_> = (0..self.height)
+            .into_par_iter()
+            .flat_map(|y| {
+                count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                println!("Row: {}, Count: {}", y, count.load(std::sync::atomic::Ordering::SeqCst));
+
+                let mut rng = StdRng::from_entropy();
+                (0..self.width)
+                    .into_iter()
+                    .map(|x| {
+                        self.get_color_with_photon_map(x, y, iterations, &mut rng, &photon_map)
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        buffer.add_samples(&colors);
+
+        buffer.image()
+    }
+
+    fn shoot_photon(&self, rng: &mut StdRng) -> Vec<Photon> {
+        // FIXME: sample random light based on area instead of choosing randomly
+        let light_index: usize = rng.gen_range(0..self.scene.lights.len());
+        let light = &self.scene.lights[light_index as usize];
+
+        // sample a random point on the light and a random direction in the hemisphere
+        let (pos, direction, pdf) = if let Light::Object(object) = light {
+            // the `target` arg isn't used when sampling a triangle, so it can be a dummy value
+            // Sample a location on the light
+            let target = glm::vec3(0., 0., 0.);
+            let (v, n, p) = object.shape.sample(&target, rng);
+
+            // sample random hemisphere direction
+            let phi = 2. * glm::pi::<f64>() * rng.gen::<f64>();
+            let theta = (1. - rng.gen::<f64>()).acos();
+            let pdf_of_sample = 0.5 * glm::one_over_pi::<f64>();
+            let random_hemisphere_dir = glm::vec3(
+                theta.sin() * phi.sin(),
+                theta.sin(),
+                theta.sin() * phi.sin(),
+            );
+
+            // rotate towards normal
+            let rotation = glm::quat_rotation(&glm::vec3(0., 1., 0.), &n);
+            let bounce_direction =
+                glm::quat_rotate_vec3(&rotation, &random_hemisphere_dir).normalize();
+
+            (v, bounce_direction, p)
+        } else {
+            panic!("Found non-object light while photon mapping")
+        };
+
+        let photons = self.trace_photon(
+            Ray {
+                origin: pos,
+                dir: direction,
+            },
+            rng,
+        );
+        photons
+    }
+
+    fn trace_photon(&self, ray: Ray, rng: &mut StdRng) -> Vec<Photon> {
+        match self.get_closest_hit(ray) {
+            None => Vec::new(),
+            Some((h, object)) => {
+                let world_pos = ray.at(h.time);
+                let material = object.material;
+                let wo = -glm::normalize(&ray.dir);
+
+                // page 16 of siggraph course on photon mapping
+                let specular = 1. - material.roughness;
+                let specular = glm::vec3(specular, specular, specular);
+                let diffuse = material.color;
+                let p_r = vec![
+                    specular.x + diffuse.x,
+                    specular.y + diffuse.y,
+                    specular.z + diffuse.z,
+                ]
+                .into_iter()
+                .fold(f64::NAN, f64::max);
+                let diffuse_sum = diffuse.x + diffuse.y + diffuse.z;
+                let specular_sum = specular.x + specular.y + specular.z;
+                let p_d = diffuse_sum / (diffuse_sum + specular_sum) * p_r;
+                let p_s = (specular_sum) / (diffuse_sum + specular_sum) * p_r;
+
+                let russian_roulette: f64 = rng.gen();
+                if russian_roulette < p_d + p_s {
+                    // diffuse
+                    if let Some((wi, pdf)) = material.sample_f(&h.normal, &wo, rng) {
+                        let f = material.bsdf(&h.normal, &wo, &wi);
+                        let ray = Ray {
+                            origin: world_pos,
+                            dir: wi,
+                        };
+                        // gather recursive photons and multiply by brdf
+                        let mut next_photons: Vec<Photon> = self
+                            .trace_photon(ray, rng)
+                            .into_iter()
+                            .map(|p| Photon {
+                                position: p.position,
+                                direction: p.direction,
+                                power: (1.0 / pdf)
+                                    * f.component_mul(&p.power)
+                                    * wi.dot(&h.normal).clamp(0., 1.),
+                            })
+                            .collect();
+
+                        // if this is a specular reflection don't add new photon
+                        if russian_roulette < p_d {
+                            // add photon from current step
+                            next_photons.push(Photon {
+                                position: world_pos,
+                                direction: wo,
+                                power: material.color,
+                            });
+                        }
+
+                        next_photons
+                    } else {
+                        Vec::new()
+                    }
+                } else {
+                    // absorbed
+                    Vec::new()
+                }
+            }
+        }
+    }
+
+    fn get_color_with_photon_map(
+        &self,
+        x: u32,
+        y: u32,
+        iterations: u32,
+        rng: &mut StdRng,
+        photon_map: &KdTree<Photon>,
+    ) -> Color {
+        let dim = std::cmp::max(self.width, self.height) as f64;
+        let xn = ((2 * x + 1) as f64 - self.width as f64) / dim;
+        let yn = ((2 * (self.height - y) - 1) as f64 - self.height as f64) / dim;
+        let mut color = glm::vec3(0.0, 0.0, 0.0);
+        for _ in 0..iterations {
+            let dx = rng.gen_range((-1.0 / dim)..(1.0 / dim));
+            let dy = rng.gen_range((-1.0 / dim)..(1.0 / dim));
+            color += self.trace_ray_with_photon_map(
+                self.camera.cast_ray(xn + dx, yn + dy, rng),
+                rng,
+                photon_map,
+            );
+        }
+        color / f64::from(iterations) * 2.0_f64.powf(self.exposure_value)
+    }
+
+    fn trace_ray_with_photon_map(
+        &self,
+        ray: Ray,
+        rng: &mut StdRng,
+        photon_map: &KdTree<Photon>,
+    ) -> Color {
+        match self.get_closest_hit(ray) {
+            None => self.scene.environment.get_color(&ray.dir),
+            Some((h, object)) => {
+                let world_pos = ray.at(h.time);
+                let material = object.material;
+                let wo = -glm::normalize(&ray.dir);
+
+                let near_photons = photon_map
+                    .nearests(&[world_pos.x, world_pos.y, world_pos.z], CLOSEST_N_PHOTONS);
+                let mut color = Color::new(0.0, 0.0, 0.0);
+
+                // indirect lighting via photon map
+                for ItemAndDistance {
+                    item: photon,
+                    squared_distance: _,
+                } in near_photons
+                {
+                    color += material
+                        .bsdf(&h.normal, &wo, &photon.direction)
+                        .component_mul(&photon.power)
+                        * photon.direction.dot(&h.normal).clamp(0., 1.);
+                }
+
+                // direct lighting via light sampling
+                color += self.sample_lights(&material, &world_pos, &h.normal, &wo, rng);
+
+                color
+            }
+        }
     }
 }
