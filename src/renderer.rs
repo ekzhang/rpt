@@ -224,7 +224,7 @@ impl<'a> Renderer<'a> {
 struct Photon {
     pub position: glm::DVec3,
     pub direction: glm::DVec3,
-    pub power: Color,
+    pub power: glm::DVec3,
 }
 
 impl KdPoint for Photon {
@@ -235,11 +235,13 @@ impl KdPoint for Photon {
     }
 }
 
-static CLOSEST_N_PHOTONS: usize = 100;
+/// how many photons to count the contribution of when calculating indirect lighting for a point
+static CLOSEST_N_PHOTONS: usize = 10;
 
 impl<'a> Renderer<'a> {
     /// renders an image using photon mapping
     pub fn photon_map_render(&self, photon_count: usize, iterations: u32) -> RgbImage {
+        // ensure that scene only has object lights (may not be necessary)
         for light in self.scene.lights.iter() {
             match light {
                 Light::Object(_) => {}
@@ -250,11 +252,18 @@ impl<'a> Renderer<'a> {
         }
 
         println!("Shooting photons");
+        let watts = 100.;
         let mut rng = StdRng::from_entropy();
         let mut photon_list = Vec::new();
         for _ in 0..photon_count {
-            photon_list.extend(self.shoot_photon(&mut rng));
+            // shoot photon from a random light
+            photon_list.extend(self.shoot_photon(watts as f64, &mut rng));
         }
+        // scale photons down to distribute the wattage
+        photon_list
+            .iter_mut()
+            .for_each(|p| p.power /= photon_count as f64);
+
         println!("Building kdtree");
         let photon_map = KdTree::build_by(photon_list, |a, b, k| {
             a.position[k].partial_cmp(&b.position[k]).unwrap()
@@ -267,7 +276,7 @@ impl<'a> Renderer<'a> {
             .into_par_iter()
             .flat_map(|y| {
                 count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                println!("Row: {}, Count: {}", y, count.load(std::sync::atomic::Ordering::SeqCst));
+                println!("Count: {}", count.load(std::sync::atomic::Ordering::SeqCst));
 
                 let mut rng = StdRng::from_entropy();
                 (0..self.width)
@@ -283,17 +292,19 @@ impl<'a> Renderer<'a> {
         buffer.image()
     }
 
-    fn shoot_photon(&self, rng: &mut StdRng) -> Vec<Photon> {
+    /// shoot a photon from a random light with power `power` and return a list of
+    /// photons that have gathered in the scene
+    fn shoot_photon(&self, power: f64, rng: &mut StdRng) -> Vec<Photon> {
         // FIXME: sample random light based on area instead of choosing randomly
         let light_index: usize = rng.gen_range(0..self.scene.lights.len());
         let light = &self.scene.lights[light_index as usize];
 
         // sample a random point on the light and a random direction in the hemisphere
-        let (pos, direction, pdf) = if let Light::Object(object) = light {
+        if let Light::Object(object) = light {
             // the `target` arg isn't used when sampling a triangle, so it can be a dummy value
             // Sample a location on the light
             let target = glm::vec3(0., 0., 0.);
-            let (v, n, p) = object.shape.sample(&target, rng);
+            let (pos, n, pdf) = object.shape.sample(&target, rng);
 
             // sample random hemisphere direction
             let phi = 2. * glm::pi::<f64>() * rng.gen::<f64>();
@@ -305,29 +316,34 @@ impl<'a> Renderer<'a> {
                 theta.sin() * phi.sin(),
             );
 
-            // rotate towards normal
+            // rotate direction towards normal
             let rotation = glm::quat_rotation(&glm::vec3(0., 1., 0.), &n);
-            let bounce_direction =
-                glm::quat_rotate_vec3(&rotation, &random_hemisphere_dir).normalize();
+            let direction = glm::quat_rotate_vec3(&rotation, &random_hemisphere_dir).normalize();
 
-            (v, bounce_direction, p)
+            // recursively gather photons
+            let photons = self.trace_photon(
+                Ray {
+                    origin: pos,
+                    dir: direction,
+                },
+                power * object.material.color / pdf / pdf_of_sample,
+                rng,
+            );
+
+            photons
         } else {
             panic!("Found non-object light while photon mapping")
-        };
-
-        let photons = self.trace_photon(
-            Ray {
-                origin: pos,
-                dir: direction,
-            },
-            rng,
-        );
-        photons
+        }
     }
 
-    fn trace_photon(&self, ray: Ray, rng: &mut StdRng) -> Vec<Photon> {
+    /// trace a photon along ray `ray` with power `power` and check for intersections. Returns
+    /// vec of photons that have been recursively traces and placed in the scene
+    fn trace_photon(&self, ray: Ray, power: glm::DVec3, rng: &mut StdRng) -> Vec<Photon> {
         match self.get_closest_hit(ray) {
-            None => Vec::new(),
+            None => {
+                // no photons if we don't hit a scene element
+                Vec::new()
+            }
             Some((h, object)) => {
                 let world_pos = ray.at(h.time);
                 let material = object.material;
@@ -337,6 +353,8 @@ impl<'a> Renderer<'a> {
                 let specular = 1. - material.roughness;
                 let specular = glm::vec3(specular, specular, specular);
                 let diffuse = material.color;
+                let specular = glm::vec3(0.1, 0.1, 0.1);
+                let diffuse = glm::vec3(0.5, 0.5, 0.5);
                 let p_r = vec![
                     specular.x + diffuse.x,
                     specular.y + diffuse.y,
@@ -347,42 +365,43 @@ impl<'a> Renderer<'a> {
                 let diffuse_sum = diffuse.x + diffuse.y + diffuse.z;
                 let specular_sum = specular.x + specular.y + specular.z;
                 let p_d = diffuse_sum / (diffuse_sum + specular_sum) * p_r;
-                let p_s = (specular_sum) / (diffuse_sum + specular_sum) * p_r;
+                let p_s = specular_sum / (diffuse_sum + specular_sum) * p_r;
 
+                // only do diffuse russian rouletter for now (no specular)
                 let russian_roulette: f64 = rng.gen();
-                if russian_roulette < p_d + p_s {
-                    // diffuse
+                if russian_roulette < p_d {
+                    // diffuse reflection
                     if let Some((wi, pdf)) = material.sample_f(&h.normal, &wo, rng) {
                         let f = material.bsdf(&h.normal, &wo, &wi);
                         let ray = Ray {
                             origin: world_pos,
                             dir: wi,
                         };
-                        // gather recursive photons and multiply by brdf
-                        let mut next_photons: Vec<Photon> = self
-                            .trace_photon(ray, rng)
-                            .into_iter()
-                            .map(|p| Photon {
-                                position: p.position,
-                                direction: p.direction,
-                                power: (1.0 / pdf)
-                                    * f.component_mul(&p.power)
-                                    * wi.dot(&h.normal).clamp(0., 1.),
-                            })
-                            .collect();
 
-                        // if this is a specular reflection don't add new photon
-                        if russian_roulette < p_d {
-                            // add photon from current step
-                            next_photons.push(Photon {
-                                position: world_pos,
-                                direction: wo,
-                                power: material.color,
-                            });
-                        }
+                        // account for the chance of terminating
+                        let russian_roulette_scale_factor =
+                            glm::vec3(diffuse.x / p_d, diffuse.y / p_d, diffuse.z / p_d);
+
+                        // gather recursive photons with scaled down power
+                        let mut next_photons: Vec<Photon> = self.trace_photon(
+                            ray,
+                            power
+                                .component_mul(&russian_roulette_scale_factor)
+                                .component_mul(&f)
+                                / pdf,
+                            rng,
+                        );
+
+                        // add photon from current step
+                        next_photons.push(Photon {
+                            position: world_pos,
+                            direction: wo,
+                            power: power,
+                        });
 
                         next_photons
                     } else {
+                        // total internal reflection: no photons
                         Vec::new()
                     }
                 } else {
@@ -393,6 +412,8 @@ impl<'a> Renderer<'a> {
         }
     }
 
+    /// traces rays for a given pixel in the image and uses photon map to calc
+    /// indirect lighting
     fn get_color_with_photon_map(
         &self,
         x: u32,
@@ -408,6 +429,7 @@ impl<'a> Renderer<'a> {
         for _ in 0..iterations {
             let dx = rng.gen_range((-1.0 / dim)..(1.0 / dim));
             let dy = rng.gen_range((-1.0 / dim)..(1.0 / dim));
+            // trace ray
             color += self.trace_ray_with_photon_map(
                 self.camera.cast_ray(xn + dx, yn + dy, rng),
                 rng,
@@ -417,6 +439,8 @@ impl<'a> Renderer<'a> {
         color / f64::from(iterations) * 2.0_f64.powf(self.exposure_value)
     }
 
+    /// trace ray `Ray` through the scene to calculate illumination. Uses photon map
+    /// for indirect illumination
     fn trace_ray_with_photon_map(
         &self,
         ray: Ray,
@@ -432,6 +456,17 @@ impl<'a> Renderer<'a> {
 
                 let near_photons = photon_map
                     .nearests(&[world_pos.x, world_pos.y, world_pos.z], CLOSEST_N_PHOTONS);
+
+                // of the nearest photons, how far away is the furthest one?
+                let max_dist_squared = near_photons
+                    .iter()
+                    .map(
+                        |ItemAndDistance {
+                             squared_distance, ..
+                         }| { squared_distance },
+                    )
+                    .fold(0., |acc: f64, &p: &f64| acc.max(p));
+
                 let mut color = Color::new(0.0, 0.0, 0.0);
 
                 // indirect lighting via photon map
@@ -442,12 +477,17 @@ impl<'a> Renderer<'a> {
                 {
                     color += material
                         .bsdf(&h.normal, &wo, &photon.direction)
-                        .component_mul(&photon.power)
-                        * photon.direction.dot(&h.normal).clamp(0., 1.);
+                        .component_mul(&photon.power);
                 }
+
+                // normalize by (1/(pi * r^2))
+                color = color * (1. / (glm::pi::<f64>() * max_dist_squared));
 
                 // direct lighting via light sampling
                 color += self.sample_lights(&material, &world_pos, &h.normal, &wo, rng);
+
+                // emitted lighting
+                color += material.emittance * material.color;
 
                 color
             }

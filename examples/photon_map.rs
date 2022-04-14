@@ -61,11 +61,22 @@ fn main() -> color_eyre::Result<()> {
         glm::vec3(556.0, 548.9, 0.0),
     ]);
 
+    let large_box = cube()
+        .scale(&glm::vec3(165.0, 330.0, 165.0))
+        .rotate_y(glm::two_pi::<f64>() * (-253.0 / 360.0))
+        .translate(&glm::vec3(368.0, 165.0, 351.0));
+    let small_box = cube()
+        .scale(&glm::vec3(165.0, 165.0, 165.0))
+        .rotate_y(glm::two_pi::<f64>() * (-197.0 / 360.0))
+        .translate(&glm::vec3(185.0, 82.5, 169.0));
+
     scene.add(Object::new(floor).material(white));
     scene.add(Object::new(ceiling).material(white));
     scene.add(Object::new(back_wall).material(white));
     scene.add(Object::new(left_wall).material(red));
     scene.add(Object::new(right_wall).material(green));
+    scene.add(Object::new(large_box).material(white));
+    scene.add(Object::new(small_box).material(white));
     scene.add(Light::Object(Object::new(light_rect).material(light_mtl)));
 
     let image = Renderer::new(&scene, camera)
@@ -74,10 +85,10 @@ fn main() -> color_eyre::Result<()> {
         .filter(Filter::Box(1))
         .max_bounces(2)
         .num_samples(100)
-        .photon_map_render(100_000, 50);
+        .photon_map_render(10_000_000, 10);
 
     image
-        .save(format!("output.png"))
+        .save(format!("output4.png"))
         .expect("Failed to save image");
 
     Ok(())
