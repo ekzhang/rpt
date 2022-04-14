@@ -1,13 +1,11 @@
-use image::{
-    codecs::hdr::{HdrDecoder, HdrMetadata},
-    Rgb,
-};
-use rand::{Rng, SeedableRng};
 use std::fs::File;
 use std::io::BufReader;
 use std::process::Command;
 use std::sync::Arc;
 
+use image::codecs::hdr::{HdrDecoder, HdrMetadata};
+use image::Rgb;
+use rand::{Rng, SeedableRng};
 use rpt::*;
 
 fn rgb_to_color(rgb: Rgb<f32>) -> Color {

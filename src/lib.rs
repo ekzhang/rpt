@@ -3,9 +3,6 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-pub use glm;
-pub use image;
-
 pub use buffer::*;
 pub use camera::*;
 pub use color::*;
@@ -19,6 +16,7 @@ pub use ode::*;
 pub use renderer::*;
 pub use scene::*;
 pub use shape::*;
+pub use {glm, image};
 
 mod buffer;
 mod camera;

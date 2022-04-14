@@ -1,10 +1,11 @@
 //! Stanford dragon render
 
-use std::io::{prelude::*, Cursor, SeekFrom};
-use tempfile::tempfile;
-use zip::ZipArchive;
+use std::io::prelude::*;
+use std::io::{Cursor, SeekFrom};
 
 use rpt::*;
+use tempfile::tempfile;
+use zip::ZipArchive;
 
 fn load_dragon() -> color_eyre::Result<Mesh> {
     let mut buf = Vec::new();

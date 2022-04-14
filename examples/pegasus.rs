@@ -2,17 +2,16 @@
 //!
 //! Source: https://www.cgtrader.com/free-3d-print-models/art/sculptures/pegasus-statue-sculpture-statuette-figurine-horse
 
-use image::{
-    codecs::hdr::{HdrDecoder, HdrMetadata},
-    Rgb,
-};
 use std::fs::File;
-use std::io::{prelude::*, BufReader, Cursor, SeekFrom};
+use std::io::prelude::*;
+use std::io::{BufReader, Cursor, SeekFrom};
 use std::time::Instant;
+
+use image::codecs::hdr::{HdrDecoder, HdrMetadata};
+use image::Rgb;
+use rpt::*;
 use tempfile::tempfile;
 use zip::ZipArchive;
-
-use rpt::*;
 
 fn load_pegasus() -> color_eyre::Result<Mesh> {
     let mut buf = Vec::new();

@@ -1,12 +1,13 @@
 //! Lego creator plane model, source https://free3d.com/3d-model/lego-creator-plane-4953-24788.html
 
 use std::fs::File;
-use std::io::{prelude::*, Cursor, SeekFrom};
+use std::io::prelude::*;
+use std::io::{Cursor, SeekFrom};
 use std::time::Instant;
-use tempfile::tempfile;
-use zip::ZipArchive;
 
 use rpt::*;
+use tempfile::tempfile;
+use zip::ZipArchive;
 
 fn load_lego_plane() -> color_eyre::Result<Vec<Object>> {
     let mut buf = Vec::new();

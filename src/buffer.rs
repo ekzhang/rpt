@@ -4,10 +4,10 @@ use crate::color::{color_bytes, Color};
 
 /// A buffer that stores sample results from path tracing
 pub struct Buffer {
-    width: u32,
-    height: u32,
+    width:   u32,
+    height:  u32,
     samples: Vec<Vec<Color>>,
-    filter: Filter,
+    filter:  Filter,
 }
 
 impl Buffer {

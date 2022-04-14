@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
-use std::io::{self, prelude::*, BufReader, SeekFrom};
+use std::io::prelude::*;
+use std::io::{self, BufReader, SeekFrom};
 
 use crate::material::Material;
 use crate::object::Object;

@@ -1,12 +1,13 @@
-use rand::rngs::StdRng;
 use std::sync::Arc;
 
-use crate::kdtree::{Bounded, BoundingBox};
 pub use cube::Cube;
 pub use mesh::{Mesh, Triangle};
 pub use monomial_surface::MonomialSurface;
 pub use plane::Plane;
+use rand::rngs::StdRng;
 pub use sphere::Sphere;
+
+use crate::kdtree::{Bounded, BoundingBox};
 
 mod cube;
 mod mesh;
@@ -66,7 +67,7 @@ impl Ray {
         let dir = transform * self.dir.to_homogeneous();
         Self {
             origin: origin.xyz(),
-            dir: dir.xyz(),
+            dir:    dir.xyz(),
         }
     }
 }
@@ -83,7 +84,7 @@ pub struct HitRecord {
 impl Default for HitRecord {
     fn default() -> Self {
         Self {
-            time: f64::INFINITY,
+            time:   f64::INFINITY,
             normal: glm::vec3(0.0, 0.0, 0.0),
         }
     }
@@ -99,12 +100,12 @@ impl HitRecord {
 /// A shape that has been composed with a transformation
 #[derive(Copy, Clone)]
 pub struct Transformed<T> {
-    shape: T,
-    transform: glm::DMat4,
-    linear: glm::DMat3,
+    shape:             T,
+    transform:         glm::DMat4,
+    linear:            glm::DMat3,
     inverse_transform: glm::DMat4,
-    normal_transform: glm::DMat3,
-    scale: f64,
+    normal_transform:  glm::DMat3,
+    scale:             f64,
 }
 
 impl<T> Transformed<T> {

@@ -1,4 +1,5 @@
-use rand::{rngs::StdRng, Rng};
+use rand::rngs::StdRng;
+use rand::Rng;
 use rand_distr::UnitCircle;
 
 use super::{HitRecord, Ray, Shape};
@@ -14,7 +15,7 @@ pub struct MonomialSurface {
     /// The height of the surface
     pub height: f64,
     /// The surface exponent, must be equal to 4 currently
-    pub exp: f64,
+    pub exp:    f64,
 }
 
 impl Shape for MonomialSurface {
@@ -193,7 +194,7 @@ mod tests {
     fn monomial_closest_point_works() {
         let surf = MonomialSurface {
             height: 1.,
-            exp: 4.,
+            exp:    4.,
         };
         let test_xz = |x: f64, z: f64| {
             // Test the closest point to (x, y(x, z), z)
@@ -201,7 +202,8 @@ mod tests {
             assert!(glm::distance(&pt, &surf.closest_point(&pt)) < 0.03);
         };
         let test_xy = |x: f64, y: f64| {
-            // Test the closest point to the given (x, y, 0) (assume z=0 because the problem is the same in 3D)
+            // Test the closest point to the given (x, y, 0) (assume z=0 because the problem is the
+            // same in 3D)
             let pt = glm::vec3(x, y, 0.);
             let closest = surf.closest_point(&pt);
             let dist = glm::distance2(&pt, &closest);
@@ -209,7 +211,14 @@ mod tests {
                 let xi = i as f64 / 100.;
                 let dist1 = glm::distance2(&pt, &glm::vec3(xi, xi.powi(4), 0.));
                 if dist1 < dist - 1e-5 {
-                    println!("Test failed for ({}, {}): found distance {}, but there is a point within distance {}", x, y, dist.sqrt(), dist1.sqrt());
+                    println!(
+                        "Test failed for ({}, {}): found distance {}, but there is a point within \
+                         distance {}",
+                        x,
+                        y,
+                        dist.sqrt(),
+                        dist1.sqrt()
+                    );
                     println!("The closest point was ({}, {})", closest.x, closest.y);
                 }
             }

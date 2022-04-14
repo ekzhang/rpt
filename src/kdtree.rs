@@ -1,5 +1,8 @@
-use rand::{distributions::Uniform, rngs::StdRng, Rng};
 use std::sync::Arc;
+
+use rand::distributions::Uniform;
+use rand::rngs::StdRng;
+use rand::Rng;
 
 use crate::shape::{HitRecord, Ray, Shape};
 
@@ -98,9 +101,9 @@ impl BoundingBox {
 /// optimize the code by a few orders of magnitude.
 #[derive(Clone)]
 pub struct KdTree<T> {
-    root: Box<KdNode>,
+    root:    Box<KdNode>,
     objects: Vec<T>,
-    bounds: BoundingBox,
+    bounds:  BoundingBox,
 }
 
 impl<T: Bounded> KdTree<T> {

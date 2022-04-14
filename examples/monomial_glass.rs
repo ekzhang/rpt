@@ -1,9 +1,7 @@
-use image::{
-    codecs::hdr::{HdrDecoder, HdrMetadata},
-    Rgb,
-};
 use std::io::BufReader;
 
+use image::codecs::hdr::{HdrDecoder, HdrMetadata};
+use image::Rgb;
 use rpt::*;
 
 fn rgb_to_color(rgb: Rgb<f32>) -> Color {
@@ -70,12 +68,10 @@ fn main() -> color_eyre::Result<()> {
         glm::vec3(0.0, 5.0, 5.0),
     ));
 
-    /*
-    scene.add(Light::Point(
-        glm::vec3(100.0, 100.0, 100.0),
-        glm::vec3(0.0, 0.0, -20.0),
-    ));
-     */
+    // scene.add(Light::Point(
+    // glm::vec3(100.0, 100.0, 100.0),
+    // glm::vec3(0.0, 0.0, -20.0),
+    // ));
 
     Renderer::new(&scene, Camera::default())
         .width(800)

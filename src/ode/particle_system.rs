@@ -86,7 +86,7 @@ impl ParticleSystem for MarblesSystem {
         }
         let surf = MonomialSurface {
             height: 2.,
-            exp: 4.,
+            exp:    4.,
         };
         // Surface physics
         for (i, pos_i) in state.pos.iter().enumerate() {
@@ -117,7 +117,7 @@ impl ParticleSystem for MarblesSystem {
             }
         }
         for (i, vel_i) in state.vel.iter().enumerate() {
-            //introduce "air resistance"
+            // introduce "air resistance"
             acc[i] -= vel_i / 5.;
         }
 

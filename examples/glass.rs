@@ -1,11 +1,9 @@
 //! Demo of metal and glass balls, using a custom HDRI to light the scene
 
-use image::{
-    codecs::hdr::{HdrDecoder, HdrMetadata},
-    Rgb,
-};
 use std::io::BufReader;
 
+use image::codecs::hdr::{HdrDecoder, HdrMetadata};
+use image::Rgb;
 use rpt::*;
 
 fn rgb_to_color(rgb: Rgb<f32>) -> Color {

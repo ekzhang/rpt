@@ -19,7 +19,7 @@ impl Object {
     /// Create a new object from a shape, with default material
     pub fn new<T: Shape + 'static>(shape: T) -> Self {
         Self {
-            shape: Box::new(shape),
+            shape:    Box::new(shape),
             material: Material::default(),
         }
     }

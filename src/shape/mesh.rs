@@ -1,4 +1,5 @@
-use rand::{rngs::StdRng, Rng};
+use rand::rngs::StdRng;
+use rand::Rng;
 
 use super::{HitRecord, Ray, Shape};
 use crate::kdtree::{Bounded, BoundingBox, KdTree};

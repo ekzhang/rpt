@@ -1,4 +1,5 @@
-use rand::{rngs::StdRng, Rng};
+use rand::rngs::StdRng;
+use rand::Rng;
 use rand_distr::UnitDisc;
 
 use crate::shape::Ray;
@@ -28,11 +29,11 @@ pub struct Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            eye: glm::vec3(0.0, 0.0, 10.0),
-            direction: glm::vec3(0.0, 0.0, -1.0),
-            up: glm::vec3(0.0, 1.0, 0.0), // we live in a y-up world...
-            fov: std::f64::consts::FRAC_PI_6,
-            aperture: 0.0,
+            eye:            glm::vec3(0.0, 0.0, 10.0),
+            direction:      glm::vec3(0.0, 0.0, -1.0),
+            up:             glm::vec3(0.0, 1.0, 0.0), // we live in a y-up world...
+            fov:            std::f64::consts::FRAC_PI_6,
+            aperture:       0.0,
             focal_distance: 0.0,
         }
     }

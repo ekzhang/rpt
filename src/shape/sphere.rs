@@ -1,4 +1,5 @@
-use rand::{rngs::StdRng, Rng};
+use rand::rngs::StdRng;
+use rand::Rng;
 use rand_distr::UnitDisc;
 
 use super::{HitRecord, Ray, Shape};

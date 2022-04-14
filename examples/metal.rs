@@ -1,13 +1,11 @@
 //! Demo of a couple metal teapots, one perfectly shiny, and one with roughness 0.1
 
-use image::{
-    codecs::hdr::{HdrDecoder, HdrMetadata},
-    Rgb,
-};
 use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
 
+use image::codecs::hdr::{HdrDecoder, HdrMetadata};
+use image::Rgb;
 use rpt::*;
 
 fn rgb_to_color(rgb: Rgb<f32>) -> Color {
