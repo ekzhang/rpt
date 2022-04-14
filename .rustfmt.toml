@@ -1,0 +1,14 @@
+unstable_features = true
+
+# tab_spaces = 2
+wrap_comments = true
+use_field_init_shorthand = true
+comment_width = 100
+group_imports = "StdExternalCrate"
+imports_granularity = "Module"
+format_strings = true
+normalize_comments = true
+normalize_doc_attributes = true
+# report_todo = "Always"
+# report_fixme = "Always"
+struct_field_align_threshold = 20
