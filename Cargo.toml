@@ -8,7 +8,7 @@ repository = "https://github.com/ekzhang/rpt"
 documentation = "https://docs.rs/rpt"
 keywords = ["path-tracing", "ray-tracing", "pbr", "rendering", "graphics"]
 categories = ["graphics", "rendering::engine", "rendering::data-formats", "multimedia::images"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 glm = { version = "0.10.0", package = "nalgebra-glm" }
