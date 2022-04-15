@@ -85,7 +85,7 @@ fn main() -> color_eyre::Result<()> {
         .filter(Filter::Box(1))
         .max_bounces(2)
         .num_samples(100)
-        .photon_map_render(10_000_000, 10);
+        .photon_map_render(10_000_000);
 
     image
         .save(format!("output4.png"))

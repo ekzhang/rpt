@@ -159,7 +159,7 @@ impl<'a> Renderer<'a> {
                         let f = material.bsdf(&h.normal, &wo, &wi);
                         let ray = Ray {
                             origin: world_pos,
-                            dir: wi,
+                            dir:    wi,
                         };
                         let indirect = 1.0 / pdf
                             * f.component_mul(&self.trace_ray(ray, num_bounces + 1, rng))
@@ -193,7 +193,7 @@ impl<'a> Renderer<'a> {
                 let closest_hit = self
                     .get_closest_hit(Ray {
                         origin: *pos,
-                        dir: wi,
+                        dir:    wi,
                     })
                     .map(|(r, _)| r.time);
                 if closest_hit.is_none() || closest_hit.unwrap() > dist_to_light {
@@ -223,9 +223,9 @@ impl<'a> Renderer<'a> {
 }
 
 struct Photon {
-    pub position: glm::DVec3,
+    pub position:  glm::DVec3,
     pub direction: glm::DVec3,
-    pub power: glm::DVec3,
+    pub power:     glm::DVec3,
 }
 
 impl KdPoint for Photon {
@@ -241,7 +241,7 @@ static CLOSEST_N_PHOTONS: usize = 10;
 
 impl<'a> Renderer<'a> {
     /// renders an image using photon mapping
-    pub fn photon_map_render(&self, photon_count: usize, iterations: u32) -> RgbImage {
+    pub fn photon_map_render(&self, photon_count: usize) -> RgbImage {
         // ensure that scene only has object lights (may not be necessary)
         for light in self.scene.lights.iter() {
             match light {
@@ -283,7 +283,13 @@ impl<'a> Renderer<'a> {
                 (0..self.width)
                     .into_iter()
                     .map(|x| {
-                        self.get_color_with_photon_map(x, y, iterations, &mut rng, &photon_map)
+                        self.get_color_with_photon_map(
+                            x,
+                            y,
+                            self.num_samples,
+                            &mut rng,
+                            &photon_map,
+                        )
                     })
                     .collect::<Vec<_>>()
             })
@@ -325,7 +331,7 @@ impl<'a> Renderer<'a> {
             let photons = self.trace_photon(
                 Ray {
                     origin: pos,
-                    dir: direction,
+                    dir:    direction,
                 },
                 power * object.material.color / pdf / pdf_of_sample,
                 rng,
@@ -376,7 +382,7 @@ impl<'a> Renderer<'a> {
                         let f = material.bsdf(&h.normal, &wo, &wi);
                         let ray = Ray {
                             origin: world_pos,
-                            dir: wi,
+                            dir:    wi,
                         };
 
                         // account for the chance of terminating
